@@ -4,10 +4,6 @@ Local **SSH client** with a **session-scoped Agent**: connect to a host, use a r
 
 > **MVP:** UI + **`sessiond`** sidecar on your machine. Remote hosts only need **OpenSSH `sshd`**.
 
-![Hive Nest desktop](hivenest-desktop.png)
-
-![Hive Nest terminal + Agent](hivenest-term.png)
-
 ## Features
 
 - Multi-host **session tabs** — Agent never cross-executes to another machine

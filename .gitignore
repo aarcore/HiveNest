@@ -25,6 +25,10 @@ sessiond/vendor/
 *.key
 *.crt
 
+# Local screenshots (may contain hosts, paths, or desktop contents)
+hivenest-desktop.png
+hivenest-term.png
+
 # Local data
 data/
 *.db
