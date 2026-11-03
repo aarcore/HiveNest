@@ -1,0 +1,40 @@
+# Queen image. UI must be prebuilt into queen/internal/ui/dist
+# (from repo root: cd web && npm install && npm run build)
+# --- Go Queen (+ embed UI) ---
+FROM golang:1.26-alpine AS build
+WORKDIR /src
+COPY protocol/ /src/protocol/
+COPY queen/ /src/queen/
+COPY worker/ /src/worker/
+WORKDIR /src/queen
+RUN test -f internal/ui/dist/index.html || (echo "missing queen/internal/ui/dist — run: cd web && npm run build" && exit 1)
+RUN go mod download && CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=0.5.0-dev" -o /queen ./cmd/queen
+WORKDIR /src/worker
+RUN mkdir -p /dist
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=0.5.0-dev" -o /dist/hivenest-worker-linux-amd64 ./cmd/worker \
+ && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.version=0.5.0-dev" -o /dist/hivenest-worker-linux-arm64 ./cmd/worker
+
+FROM alpine:3.20
+ARG TARGETARCH
+RUN apk add --no-cache ca-certificates wget \
+ && ARCH="$TARGETARCH" \
+ && if [ -z "$ARCH" ]; then ARCH="$(uname -m)"; fi \
+ && case "$ARCH" in \
+      amd64|x86_64) CF_ARCH=amd64 ;; \
+      arm64|aarch64) CF_ARCH=arm64 ;; \
+      *) CF_ARCH=amd64 ;; \
+    esac \
+ && wget -q -O /usr/local/bin/cloudflared \
+      "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" \
+ && chmod +x /usr/local/bin/cloudflared \
+ && cloudflared --version || true
+COPY --from=build /queen /usr/local/bin/queen
+COPY install/ /opt/hivenest/install/
+COPY --from=build /dist/ /opt/hivenest/dist/
+ENV HIVENEST_INSTALL_DIR=/opt/hivenest/install
+ENV HIVENEST_ARTIFACT_DIR=/opt/hivenest/dist
+ENV HIVENEST_PUBLIC_URL=http://127.0.0.1:8080
+ENV HIVENEST_DEMO_TUNNEL=0
+ENV HIVENEST_TUNNEL_BIN=cloudflared
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/queen"]

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hive Nest / 蜂巢</title>
+  <style>
+    :root {
+      --bg: #0f1419; --card: #1a2332; --border: #2d3a4d; --text: #e7ecf3;
+      --muted: #8b9bb4; --accent: #f5a623; --ok: #3dd68c; --bad: #f07178; --info: #5ccfe6; --warn: #ffcc66;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+    header h1 { margin: 0; font-size: 1.35rem; color: var(--accent); }
+    header .sub { color: var(--muted); font-size: 0.9rem; }
+    .hint { background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.35); border-radius: 8px; padding: 0.65rem 0.9rem; margin: 1rem 1.5rem 0; max-width: 1200px; margin-left: auto; margin-right: auto; font-size: 0.88rem; color: var(--muted); }
+    .hint code { color: var(--accent); }
+    main { display: grid; gap: 1rem; padding: 1rem 1.5rem 2rem; grid-template-columns: 1fr 1fr; max-width: 1200px; margin: 0 auto; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; }
+    .card h2 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--info); }
+    .span2 { grid-column: 1 / -1; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; }
+    .badge { display: inline-block; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .online { background: rgba(61,214,140,.15); color: var(--ok); }
+    .offline { background: rgba(240,113,120,.15); color: var(--bad); }
+    .queued { background: rgba(255,204,102,.15); color: var(--warn); }
+    .dispatched { background: rgba(92,207,230,.15); color: var(--info); }
+    .succeeded { background: rgba(61,214,140,.15); color: var(--ok); }
+    .failed { background: rgba(240,113,120,.15); color: var(--bad); }
+    .info { background: rgba(92,207,230,.15); color: var(--info); }
+    .warning { background: rgba(255,204,102,.15); color: var(--warn); }
+    .critical { background: rgba(240,113,120,.15); color: var(--bad); }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+    select, input, textarea, button { width: 100%; padding: 0.5rem 0.6rem; border-radius: 6px; border: 1px solid var(--border); background: #121a24; color: var(--text); font: inherit; }
+    button { background: var(--accent); color: #1a1205; border: none; font-weight: 700; cursor: pointer; margin-top: 0.75rem; }
+    button:hover { filter: brightness(1.05); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.btn-sm {
+      width: auto; display: inline-block; margin: 0; padding: 0.28rem 0.65rem;
+      font-size: 0.78rem; font-weight: 600; background: transparent; color: var(--info);
+      border: 1px solid var(--border);
+    }
+    button.btn-sm:hover { border-color: var(--info); filter: none; background: rgba(92,207,230,.1); }
+    button.btn-sm:disabled { opacity: 0.4; }
+    .row { display: grid; gap: 0.75rem; grid-template-columns: 1fr 1fr; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; }
+    .msg { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted); }
+    .msg.err { color: var(--bad); }
+    .msg.ok { color: var(--ok); }
+    .status-help { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem; }
+    /* Modal */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 1000; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      width: min(720px, 100%); max-height: min(80vh, 900px); display: flex; flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+    .modal header {
+      padding: 0.9rem 1.1rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    }
+    .modal header h3 { margin: 0; font-size: 1rem; color: var(--accent); }
+    .modal header .close {
+      width: auto; margin: 0; padding: 0.25rem 0.6rem; background: transparent;
+      color: var(--muted); border: 1px solid var(--border); font-weight: 600;
+    }
+    .modal header .close:hover { color: var(--text); filter: none; }
+    .modal .body { padding: 1rem 1.1rem; overflow: auto; flex: 1; }
+    .modal .body pre {
+      margin: 0; padding: 0.85rem; background: #0c1219; border: 1px solid var(--border);
+      border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem; white-space: pre-wrap; word-break: break-word; line-height: 1.45;
+      max-height: none; color: var(--text);
+    }
+    .modal .meta-line { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.65rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hive Nest / 蜂巢</h1>
+    <span class="sub">Queen 控制台 · 明文 WS 演示（生产请 TLS/mTLS）</span>
+    <span class="sub" id="meta"></span>
+  </header>
+  <div class="hint" id="tokenHint">工蜂注册需共享引导令牌环境变量 <code>HIVENEST_BOOTSTRAP_TOKEN</code>（Queen 与 Worker 相同）。加载中…</div>
+  <main>
+    <section class="card">
+      <h2>工蜂 Workers</h2>
+      <div id="workers"><p class="msg">加载中…</p></div>
+    </section>
+    <section class="card">
+      <h2>下发任务</h2>
+      <p class="status-help">状态：queued → dispatched → succeeded / failed</p>
+      <form id="jobForm">
+        <div class="row">
+          <div>
+            <label for="worker">Worker</label>
+            <select id="worker" required></select>
+          </div>
+          <div>
+            <label for="module">模块</label>
+            <select id="module">
+              <option value="echo">echo</option>
+              <option value="host.uname">host.uname</option>
+              <option value="host.info" selected>host.info</option>
+              <option value="host.disk">host.disk</option>
+              <option value="pkg.list">pkg.list</option>
+              <option value="guard.snapshot">guard.snapshot</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:0.75rem">
+          <label for="params">Params (JSON，可选)</label>
+          <textarea id="params" rows="3" placeholder='{"message":"hello"}'></textarea>
+        </div>
+        <button type="submit" id="submitBtn">Enqueue</button>
+        <div class="msg" id="formMsg"></div>
+      </form>
+    </section>
+    <section class="card span2">
+      <h2>安全告警 Alerts</h2>
+      <div id="alerts"><p class="msg">加载中…</p></div>
+    </section>
+
+    <section class="card span2">
+      <h2>SSH 装机 Enroll</h2>
+      <p class="status-help">Queen 用纯 Go SSH 连到目标机（需网络可达 <code>host:22</code>），上传 linux amd64/arm64 工蜂并启用 systemd。密码/私钥仅在内存中用于本任务，不会写入日志或 Job 参数。装机成功后会自动刷新工蜂列表。</p>
+      <div id="dialWarn" class="hint" style="margin:0 0 0.75rem;max-width:none;display:none"></div>
+      <form id="enrollForm">
+        <div style="margin-bottom:0.75rem">
+          <label for="enrollDial">工蜂回连地址 <span style="color:var(--bad)">*</span>（目标机必须能访问此 WebSocket）</label>
+          <input id="enrollDial" required placeholder="ws://YOUR_LAN_IP:8080/v1/worker/ws" />
+          <p class="status-help" style="margin-top:0.35rem">勿填 <code>127.0.0.1</code>/<code>localhost</code>——那是工蜂本机。请填蜂后对目标机可达的 LAN IP、公网 IP 或隧道地址。</p>
+        </div>
+        <div class="row">
+          <div>
+            <label for="enrollHost">Host</label>
+            <input id="enrollHost" required placeholder="192.168.1.10 或 hostname" />
+          </div>
+          <div>
+            <label for="enrollPort">Port</label>
+            <input id="enrollPort" type="number" value="22" min="1" max="65535" />
+          </div>
+        </div>
+        <div class="row" style="margin-top:0.75rem">
+          <div>
+            <label for="enrollUser">User</label>
+            <input id="enrollUser" required placeholder="root 或可 sudo 用户" />
+          </div>
+          <div>
+            <label for="enrollSudo" style="margin-bottom:0.5rem">权限</label>
+            <label style="display:flex;align-items:center;gap:0.5rem;color:var(--text);font-size:0.9rem">
+              <input id="enrollSudo" type="checkbox" style="width:auto" /> 使用 sudo -n（需 NOPASSWD）
+            </label>
+          </div>
+        </div>
+        <div class="row" style="margin-top:0.75rem">
+          <div>
+            <label for="enrollPassword">Password（与私钥二选一）</label>
+            <input id="enrollPassword" type="password" autocomplete="off" placeholder="可选" />
+          </div>
+          <div>
+            <label for="enrollKey">Private key PEM</label>
+            <textarea id="enrollKey" rows="3" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----&#10;…"></textarea>
+          </div>
+        </div>
+        <div class="row" style="margin-top:0.75rem">
+          <div>
+            <label for="enrollWorkerId">Worker ID（可选）</label>
+            <input id="enrollWorkerId" placeholder="留空则自动生成 UUID" />
+          </div>
+          <div>
+            <label for="enrollRegion">Region / Country</label>
+            <div class="row">
+              <input id="enrollRegion" placeholder="region" />
+              <input id="enrollCountry" placeholder="country" />
+            </div>
+          </div>
+        </div>
+        <button type="submit" id="enrollBtn">开始 SSH 装机</button>
+        <div class="msg" id="enrollMsg"></div>
+      </form>
+    </section>
+
+    <section class="card span2">
+      <h2>任务结果 Jobs</h2>
+      <div id="jobs"><p class="msg">加载中…</p></div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <header>
+        <h3 id="modalTitle">进度</h3>
+        <button type="button" class="close" id="modalClose" aria-label="关闭">关闭</button>
+      </header>
+      <div class="body">
+        <div class="meta-line" id="modalMeta"></div>
+        <pre id="modalBody"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    /** @type {Map<string, any>} */
+    const detailStore = new Map();
+    /** Enroll job ids still in flight — poll harder and refresh workers on success. */
+    const pendingEnroll = new Set();
+    let lastWorkerFingerprint = "";
+    let metaLoaded = false;
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch { data = text; }
+      if (!r.ok) throw new Error((data && data.error) || text || r.statusText);
+      return data;
+    }
+    function badge(status) {
+      const cls = String(status || "").toLowerCase();
+      return `<span class="badge ${cls}">${status}</span>`;
+    }
+    function escapeHtml(s) {
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+    }
+    function shortId(id) {
+      if (!id) return "-";
+      return id.length > 8 ? id.slice(0, 8) + "…" : id;
+    }
+    function formatDetail(raw) {
+      if (raw == null || raw === "") return "(无内容)";
+      if (typeof raw === "string") {
+        try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw; }
+      }
+      if (typeof raw === "object") {
+        // enroll.ssh progress: prefer readable log lines
+        if (Array.isArray(raw.log)) {
+          const lines = [];
+          if (raw.host) lines.push(`主机: ${raw.host}:${raw.port || 22}  用户: ${raw.user || "-"}`);
+          if (raw.worker_id) lines.push(`Worker ID: ${raw.worker_id}`);
+          if (raw.arch) lines.push(`架构: ${raw.arch}`);
+          if (raw.region || raw.country) lines.push(`区域: ${raw.region || "-"} / ${raw.country || "-"}`);
+          if (lines.length) lines.push("");
+          lines.push("—— 进度日志 ——");
+          for (const line of raw.log) lines.push(String(line));
+          return lines.join("\n");
+        }
+        try { return JSON.stringify(raw, null, 2); } catch { return String(raw); }
+      }
+      return String(raw);
+    }
+    function openDetail(key) {
+      const item = detailStore.get(key);
+      if (!item) return;
+      $("modalTitle").textContent = item.title || "进度";
+      $("modalMeta").textContent = item.meta || "";
+      $("modalBody").textContent = formatDetail(item.body);
+      $("detailModal").classList.add("open");
+    }
+    function closeDetail() {
+      $("detailModal").classList.remove("open");
+    }
+    $("modalClose").addEventListener("click", closeDetail);
+    $("detailModal").addEventListener("click", (ev) => {
+      if (ev.target === $("detailModal")) closeDetail();
+    });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") closeDetail();
+    });
+
+    function workersFingerprint(list) {
+      return (list || []).map(w => `${w.id}:${w.status}:${w.last_seen_at || ""}`).sort().join("|");
+    }
+
+    function fillWorkers(list) {
+      const online = (list || []).filter(w => w.status === "online");
+      const sel = $("worker");
+      const cur = sel.value;
+      sel.innerHTML = "";
+      if (!online.length) sel.innerHTML = `<option value="">(无在线工蜂)</option>`;
+      else {
+        for (const w of online) {
+          const o = document.createElement("option");
+          o.value = w.id;
+          o.textContent = `${w.hostname || w.id} (${w.id.slice(0, 8)}…)`;
+          sel.appendChild(o);
+        }
+        if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+      }
+      if (!list || !list.length) {
+        $("workers").innerHTML = `<p class="msg">还没有工蜂。确认 Worker 的 <code>HIVENEST_BOOTSTRAP_TOKEN</code> 与蜂后一致。</p>`;
+        return;
+      }
+      const rows = list.map(w => `<tr>
+        <td class="mono">${escapeHtml(w.hostname || "-")}<br/><span style="color:var(--muted)">${escapeHtml(w.id)}</span></td>
+        <td>${badge(w.status)}</td>
+        <td>${escapeHtml(w.region || "-")} / ${escapeHtml(w.country || "-")}</td>
+        <td>${escapeHtml(w.os || "")}/${escapeHtml(w.arch || "")}</td>
+        <td class="mono">${w.last_seen_at ? new Date(w.last_seen_at).toLocaleString() : "-"}</td>
+      </tr>`).join("");
+      $("workers").innerHTML = `<table><thead><tr><th>主机</th><th>状态</th><th>区域</th><th>系统</th><th>最近心跳</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function fillJobs(list) {
+      if (!list || !list.length) { $("jobs").innerHTML = `<p class="msg">暂无任务。</p>`; return; }
+      const rows = list.map(j => {
+        const key = "job:" + j.id;
+        let body = j.output;
+        if (body == null && j.error) body = j.error;
+        detailStore.set(key, {
+          title: j.module === "enroll.ssh" ? "装机进度" : "任务输出",
+          meta: `Job ${j.id} · ${j.module} · ${j.status}` + (j.worker_id ? ` · worker ${j.worker_id}` : ""),
+          body,
+        });
+        const hasDetail = body != null && body !== "";
+        const when = j.finished_at || j.updated_at || j.created_at;
+        const btn = hasDetail
+          ? `<button type="button" class="btn-sm" data-detail="${escapeHtml(key)}">进度</button>`
+          : `<span class="msg" style="margin:0">—</span>`;
+        return `<tr>
+          <td class="mono">${escapeHtml(shortId(j.id))}<br/><span style="color:var(--muted)">${when ? new Date(when).toLocaleString() : ""}</span></td>
+          <td class="mono">${escapeHtml(shortId(j.worker_id))}</td>
+          <td>${escapeHtml(j.module)}</td>
+          <td>${badge(j.status)}</td>
+          <td>${btn}</td>
+        </tr>`;
+      }).join("");
+      $("jobs").innerHTML = `<table><thead><tr><th>Job</th><th>Worker</th><th>模块</th><th>状态</th><th>输出</th></tr></thead><tbody>${rows}</tbody></table>`;
+      $("jobs").querySelectorAll("[data-detail]").forEach(btn => {
+        btn.addEventListener("click", () => openDetail(btn.getAttribute("data-detail")));
+      });
+    }
+
+    function fillAlerts(list) {
+      if (!list || !list.length) { $("alerts").innerHTML = `<p class="msg">暂无告警。工蜂会周期性上报 <code>guard.snapshot</code>。</p>`; return; }
+      const rows = list.map((a, i) => {
+        const key = "alert:" + (a.id || i);
+        detailStore.set(key, {
+          title: "告警详情",
+          meta: `${a.kind || "-"} · ${a.severity || "info"} · worker ${a.worker_id || "-"}`,
+          body: a.payload != null ? a.payload : "(无 payload)",
+        });
+        const has = a.payload != null && a.payload !== "";
+        const btn = has
+          ? `<button type="button" class="btn-sm" data-detail="${escapeHtml(key)}">进度</button>`
+          : `<span class="msg" style="margin:0">—</span>`;
+        return `<tr>
+          <td class="mono">${a.created_at ? new Date(a.created_at).toLocaleString() : "-"}</td>
+          <td class="mono">${escapeHtml(shortId(a.worker_id))}</td>
+          <td>${escapeHtml(a.kind||"-")}</td>
+          <td>${badge(a.severity||"info")}</td>
+          <td>${btn}</td>
+        </tr>`;
+      }).join("");
+      $("alerts").innerHTML = `<table><thead><tr><th>时间</th><th>Worker</th><th>类型</th><th>级别</th><th>详情</th></tr></thead><tbody>${rows}</tbody></table>`;
+      $("alerts").querySelectorAll("[data-detail]").forEach(btn => {
+        btn.addEventListener("click", () => openDetail(btn.getAttribute("data-detail")));
+      });
+    }
+
+    async function refreshWorkersOnly() {
+      try {
+        const workers = await api("/v1/workers");
+        const list = workers.workers || [];
+        const fp = workersFingerprint(list);
+        if (fp !== lastWorkerFingerprint) {
+          lastWorkerFingerprint = fp;
+          fillWorkers(list);
+        } else {
+          // still refresh select / table text for last_seen display
+          fillWorkers(list);
+        }
+        const health = await api("/healthz");
+        $("meta").textContent = `v${health.version || "?"} · online ${health.workers_online ?? "-"}`;
+      } catch (_) { /* ignore transient */ }
+    }
+
+    async function watchPendingEnrolls() {
+      if (!pendingEnroll.size) return;
+      const ids = [...pendingEnroll];
+      for (const id of ids) {
+        try {
+          const job = await api("/v1/jobs/" + encodeURIComponent(id));
+          if (job.status === "succeeded" || job.status === "failed") {
+            pendingEnroll.delete(id);
+            const msg = $("enrollMsg");
+            if (job.status === "succeeded") {
+              msg.textContent = `装机成功 ${shortId(id)}，正在刷新工蜂列表…`;
+              msg.className = "msg ok";
+              await refreshWorkersOnly();
+              // Worker may connect a few seconds later — burst refresh
+              setTimeout(refreshWorkersOnly, 1500);
+              setTimeout(refreshWorkersOnly, 4000);
+              setTimeout(refreshWorkersOnly, 8000);
+            } else {
+              msg.textContent = `装机失败 ${shortId(id)}：${job.error || "见进度"}`;
+              msg.className = "msg err";
+            }
+            await refresh();
+          }
+        } catch (_) { /* keep watching */ }
+      }
+    }
+
+    async function refresh() {
+      try {
+        const [health, meta, workers, jobs, alerts] = await Promise.all([
+          api("/healthz"), api("/v1/meta"), api("/v1/workers"), api("/v1/jobs?limit=30"), api("/v1/alerts?limit=20"),
+        ]);
+        $("meta").textContent = `v${health.version || "?"} · online ${health.workers_online ?? "-"}`;
+        {
+          const tok = meta.bootstrap_token_hint || "(未配置)";
+          $("tokenHint").innerHTML = `本地演示引导令牌：<code>HIVENEST_BOOTSTRAP_TOKEN</code> = <code>${escapeHtml(tok)}</code>。真实主机装机命令见 <code>/v1/bootstrap/command</code>（Public URL：<code>${escapeHtml(meta.public_url||"-")}</code>）。工蜂回连：<code>${escapeHtml(meta.worker_dial_url||"-")}</code>`;
+          const dialInput = $("enrollDial");
+          if (dialInput && !dialInput.dataset.touched) {
+            dialInput.value = meta.worker_dial_url || "";
+          }
+          const warn = $("dialWarn");
+          if (warn) {
+            if (meta.worker_dial_loopback) {
+              warn.style.display = "block";
+              warn.innerHTML = `<strong style="color:var(--bad)">警告：</strong>当前工蜂回连地址是 localhost。对远程主机 SSH 装机将被拒绝，工蜂会连自己的本机。请设置环境变量 <code>HIVENEST_WORKER_DIAL_URL</code>（例如 <code>ws://192.168.x.x:8080/v1/worker/ws</code>），或在下方「工蜂回连地址」填入可达地址。`;
+            } else {
+              warn.style.display = "none";
+            }
+          }
+          if (meta.allowed_modules) {
+            const sel = $("module");
+            const cur = sel.value;
+            const mods = [...meta.allowed_modules].sort();
+            sel.innerHTML = mods.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("");
+            if (mods.includes(cur)) sel.value = cur;
+            else if (mods.includes("host.info")) sel.value = "host.info";
+          }
+          metaLoaded = true;
+        }
+        const list = workers.workers || [];
+        lastWorkerFingerprint = workersFingerprint(list);
+        fillWorkers(list);
+        fillJobs(jobs.jobs || []);
+        fillAlerts(alerts.alerts || []);
+
+        // Re-arm watch for any in-flight enroll.ssh from server state
+        for (const j of (jobs.jobs || [])) {
+          if (j.module === "enroll.ssh" && (j.status === "queued" || j.status === "dispatched")) {
+            pendingEnroll.add(j.id);
+          }
+        }
+      } catch (e) {
+        $("meta").textContent = "API 不可用: " + e.message;
+      }
+    }
+
+    $("jobForm").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const msg = $("formMsg"); const btn = $("submitBtn");
+      msg.textContent = ""; msg.className = "msg";
+      const worker_id = $("worker").value; const module = $("module").value;
+      let params = null; const raw = $("params").value.trim();
+      if (raw) { try { params = JSON.parse(raw); } catch (e) { msg.textContent = "Params 不是合法 JSON: " + e.message; msg.className = "msg err"; return; } }
+      else if (module === "echo") params = { message: "hello from Hive Nest UI" };
+      if (!worker_id) { msg.textContent = "没有在线 Worker"; msg.className = "msg err"; return; }
+      btn.disabled = true;
+      try {
+        const job = await api("/v1/jobs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ worker_id, module, params }) });
+        msg.textContent = `已下发 ${job.id} → ${job.status}`; msg.className = "msg ok";
+        await refresh();
+      } catch (e) { msg.textContent = e.message; msg.className = "msg err"; }
+      finally { btn.disabled = false; }
+    });
+
+    $("enrollDial").addEventListener("input", () => { $("enrollDial").dataset.touched = "1"; });
+    function isLoopbackDial(u) {
+      const s = String(u||"").toLowerCase();
+      return s.includes("://127.0.0.1") || s.includes("://localhost") || s.includes("://[::1]");
+    }
+    $("enrollForm").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const msg = $("enrollMsg"); const btn = $("enrollBtn");
+      msg.textContent = ""; msg.className = "msg";
+      const host = $("enrollHost").value.trim();
+      const user = $("enrollUser").value.trim();
+      const password = $("enrollPassword").value;
+      const private_key = $("enrollKey").value.trim();
+      if (!host || !user) { msg.textContent = "host 与 user 必填"; msg.className = "msg err"; return; }
+      if (!password && !private_key) { msg.textContent = "请提供 password 或 private_key"; msg.className = "msg err"; return; }
+      const dial = $("enrollDial").value.trim();
+      if (!dial) { msg.textContent = "请填写工蜂回连地址"; msg.className = "msg err"; return; }
+      if (isLoopbackDial(dial)) {
+        msg.textContent = "工蜂回连地址不能是 localhost/127.0.0.1（远程工蜂连不到蜂后）";
+        msg.className = "msg err";
+        return;
+      }
+      const body = {
+        host,
+        port: Number($("enrollPort").value) || 22,
+        user,
+        auth: {},
+        sudo: $("enrollSudo").checked,
+        worker_id: $("enrollWorkerId").value.trim() || undefined,
+        region: $("enrollRegion").value.trim() || undefined,
+        country: $("enrollCountry").value.trim() || undefined,
+        queen_ws_url: dial,
+        worker_dial_url: dial,
+      };
+      if (password) body.auth.password = password;
+      if (private_key) body.auth.private_key = private_key;
+      btn.disabled = true;
+      try {
+        const job = await api("/v1/enroll/ssh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        $("enrollPassword").value = "";
+        $("enrollKey").value = "";
+        pendingEnroll.add(job.id);
+        msg.textContent = `装机任务已创建 ${shortId(job.id)} → ${job.status}，完成后将自动更新工蜂列表`;
+        msg.className = "msg ok";
+        await refresh();
+        watchPendingEnrolls();
+      } catch (e) { msg.textContent = e.message; msg.className = "msg err"; }
+      finally { btn.disabled = false; }
+    });
+
+    refresh();
+    setInterval(refresh, 2000);
+    setInterval(watchPendingEnrolls, 1000);
+    setInterval(refreshWorkersOnly, 3000);
+  </script>
+</body>
+</html>

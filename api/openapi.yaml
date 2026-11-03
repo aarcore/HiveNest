@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: Hive Nest Queen API
+  description: |
+    Legacy Queen control-plane HTTP / WebSocket (not the sessiond client API).
+    Workers dial out to ws(s)://queen/v1/worker/ws with HIVENEST_BOOTSTRAP_TOKEN.
+  version: 0.4.0-dev
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+  /v1/meta:
+    get:
+      summary: Demo meta (allowed modules, bootstrap token hint)
+      responses:
+        "200":
+          description: OK
+  /v1/bootstrap/command:
+    get:
+      summary: Suggested worker install commands (uses HIVENEST_PUBLIC_URL)
+      responses:
+        "200":
+          description: OK
+  /v1/workers:
+    get:
+      summary: List workers
+      responses:
+        "200":
+          description: OK
+  /v1/alerts:
+    get:
+      summary: List recent guard/security alerts
+      responses:
+        "200":
+          description: OK
+  /v1/jobs:
+    get:
+      summary: List recent jobs
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: Enqueue typed job to an online worker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [worker_id, module]
+              properties:
+                worker_id: { type: string }
+                module:
+                  type: string
+                  enum: [echo, host.uname, host.info, host.disk, pkg.list, guard.snapshot]
+                params: { type: object }
+      responses:
+        "202":
+          description: Accepted / dispatched
+  /v1/worker/ws:
+    get:
+      summary: Worker WebSocket (dial-out)
+      parameters:
+        - in: header
+          name: X-HiveNest-Token
+          schema: { type: string }
+          description: Same as HIVENEST_BOOTSTRAP_TOKEN
+      responses:
+        "101":
+          description: Switching Protocols
+        "401":
+          description: Invalid bootstrap token
+
+  /v1/enroll/ssh:
+    post:
+      summary: Queen-driven SSH worker enrollment
+      description: |
+        Async job (module enroll.ssh). Queen SSHs to the host, uploads the matching
+        linux amd64/arm64 worker, writes /etc/hivenest/worker.env, enables systemd.
+        Passwords and private keys are never logged or stored in job params.
+        Requires network path Queen → host:22.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host, user, auth]
+              properties:
+                host: { type: string }
+                port: { type: integer, default: 22 }
+                user: { type: string }
+                auth:
+                  type: object
+                  properties:
+                    password: { type: string }
+                    private_key: { type: string, description: PEM }
+                worker_id: { type: string }
+                region: { type: string }
+                country: { type: string }
+                sudo: { type: boolean }
+                queen_ws_url: { type: string, description: Worker dial override ws/wss }
+                worker_dial_url: { type: string, description: Alias of queen_ws_url }
+      responses:
+        "202":
+          description: Enrollment job accepted
+        "400":
+          description: Bad request

@@ -1,0 +1,12 @@
+FROM golang:1.26-alpine AS build
+WORKDIR /src
+COPY protocol/ /src/protocol/
+COPY worker/ /src/worker/
+WORKDIR /src/worker
+RUN go mod download && CGO_ENABLED=0 go build -ldflags="-s -w -X main.version=0.5.0-dev" -o /worker ./cmd/worker
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+COPY --from=build /worker /usr/local/bin/worker
+ENV HIVENEST_QUEEN_URL=ws://queen:8080/v1/worker/ws
+ENTRYPOINT ["/usr/local/bin/worker"]

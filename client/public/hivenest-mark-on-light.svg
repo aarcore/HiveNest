@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="HiveNest mark">
+  <polygon fill="none" stroke="#d4a017" stroke-width="72" stroke-linejoin="round"
+    points="512,96 860,296 860,728 512,928 164,728 164,296"/>
+  <rect x="440" y="352" width="144" height="320" rx="24" fill="#171717"/>
+</svg>

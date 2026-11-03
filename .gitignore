@@ -1,0 +1,55 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.test
+*.out
+
+# Go
+queen/vendor/
+worker/vendor/
+sessiond/vendor/
+**/coverage.out
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Local data
+data/
+*.db
+*.sqlite
+
+web/node_modules/
+web/dist/
+
+
+client/node_modules/
+client/dist/
+hivenest-*.tgz
+
+# Tauri
+client/src-tauri/target/
+client/src-tauri/gen/
+client/src-tauri/binaries/sessiond-*
+!client/src-tauri/binaries/.gitkeep
+
+# Extra build / tooling (additive)
+node_modules/
+target/
+*.log
+Thumbs.db
+Desktop.ini
+**/.tmp-inspect/
+*.bak
+.cache/

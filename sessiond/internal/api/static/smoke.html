@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Hive Nest sessiond smoke</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css"/>
+<style>
+  :root { font-family: ui-sans-serif, system-ui, sans-serif; color: #e8eaed; background: #12141a; }
+  body { margin: 0; padding: 16px; max-width: 1100px; }
+  h1 { font-size: 1.25rem; margin: 0 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  input, button, select, textarea { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid #333; background: #1c1f28; color: inherit; }
+  button { cursor: pointer; background: #3b82f6; border-color: #3b82f6; }
+  button.secondary { background: #2a2f3a; }
+  #term { height: 320px; border: 1px solid #333; border-radius: 8px; padding: 4px; background: #0b0d12; }
+  pre { background: #1c1f28; padding: 10px; border-radius: 8px; overflow: auto; max-height: 200px; font-size: 12px; }
+  .muted { opacity: .7; font-size: 13px; }
+  label { font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>Hive Nest sessiond — smoke harness</h1>
+  <p class="muted">Loopback only. English UI for local testing. Paste the token from the sessiond token file or startup log.</p>
+  <div class="row">
+    <label>Token <input id="token" type="password" size="40" placeholder="HIVENEST_SESSIOND_TOKEN"/></label>
+    <button class="secondary" id="saveTok">Save</button>
+    <button class="secondary" id="health">Health</button>
+  </div>
+  <div class="row">
+    <input id="name" placeholder="name" value="local-test"/>
+    <input id="host" placeholder="host" value="127.0.0.1"/>
+    <input id="port" placeholder="port" value="22" size="5"/>
+    <input id="user" placeholder="user" size="12"/>
+    <select id="authMethod">
+      <option value="key">key</option>
+      <option value="password">password</option>
+      <option value="agent">agent</option>
+    </select>
+    <input id="identity" placeholder="identity_file (e.g. ~/.ssh/id_ed25519)" size="36"/>
+    <label><input type="checkbox" id="agent"/> use_agent</label>
+    <button id="addHost">Add host</button>
+    <button class="secondary" id="listHosts">Refresh hosts</button>
+  </div>
+  <div class="row">
+    <select id="hostSelect"></select>
+    <input id="sessionPassword" type="password" placeholder="password (connect-time only)" size="24" autocomplete="off"/>
+    <button id="openSess">Open session</button>
+    <button class="secondary" id="closeSess">Close session</button>
+    <span class="muted" id="sessLabel">no session</span>
+  </div>
+  <div class="row">
+    <input id="cmd" placeholder="command" value="uname -a" size="40"/>
+    <button id="exec">Exec</button>
+    <button id="propose">Propose (high-risk path)</button>
+    <button id="approve">Approve last</button>
+    <button id="execApproved">Exec with proposal</button>
+  </div>
+  <div id="term"></div>
+  <div class="row" style="margin-top:10px">
+    <button id="attach">Attach PTY</button>
+    <button class="secondary" id="detach">Detach</button>
+  </div>
+  <pre id="out"></pre>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="/smoke.js"></script>
+</body>
+</html>

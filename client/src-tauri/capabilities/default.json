@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Hive Nest desktop capabilities",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "shell:default",
+    "shell:allow-open",
+    "shell:allow-spawn",
+    "shell:allow-execute",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
+    "core:window:allow-start-dragging",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://**" },
+        { "url": "http://127.0.0.1:**" },
+        { "url": "http://localhost:**" }
+      ]
+    }
+  ]
+}

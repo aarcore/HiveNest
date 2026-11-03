@@ -1,0 +1,67 @@
+# HiveNest local demo: Queen + one Worker
+# Usage (from repo root):
+#   docker compose -f deploy/docker-compose.yml up --build
+# Then open http://127.0.0.1:8080/
+#
+# Queen and Worker MUST share HIVENEST_BOOTSTRAP_TOKEN.
+#
+# --- Remote SSH enroll / callback URL ---
+# HIVENEST_PUBLIC_URL=http://127.0.0.1:8080 is fine for browser access on the
+# Docker host, but remote workers MUST NOT dial 127.0.0.1 (that is THEIR loopback).
+# Queen auto-suggests LAN candidates and accepts:
+#   HIVENEST_ADVERTISE_HOST: 192.168.1.10          # host LAN IP (Docker-friendly)
+#   HIVENEST_WORKER_DIAL_URL: ws://192.168.1.10:8080/v1/worker/ws
+#   HIVENEST_PUBLIC_URL: http://192.168.1.10:8080
+# Optional local demo tunnel (default OFF — never silent):
+#   HIVENEST_DEMO_TUNNEL: "1"   # or toggle in UI / POST /v1/tunnel {"enabled":true}
+#   Requires cloudflared in the Queen image (bundled). Uses a temporary trycloudflare.com URL.
+# Compose demo worker still uses ws://queen:8080 (in-network DNS), unrelated to PUBLIC_URL.
+services:
+  queen:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.queen
+    image: hivenest/queen:dev
+    ports:
+      - "8080:8080"
+    environment:
+      HIVENEST_LISTEN: ":8080"
+      HIVENEST_BOOTSTRAP_TOKEN: hivenest-dev-token
+      HIVENEST_DATABASE_URL: sqlite:///data/hivenest.db
+      # Browser / curl from this machine:
+      HIVENEST_PUBLIC_URL: http://127.0.0.1:8080
+      # Uncomment for remote SSH enroll without tunnel (host-reachable, NOT 127.0.0.1):
+      # HIVENEST_ADVERTISE_HOST: YOUR_LAN_OR_PUBLIC_IP
+      # HIVENEST_WORKER_DIAL_URL: ws://YOUR_LAN_OR_PUBLIC_IP:8080/v1/worker/ws
+      # Optional: start demo tunnel at boot (or use UI toggle; default off):
+      HIVENEST_DEMO_TUNNEL: "0"
+      HIVENEST_TUNNEL_BIN: cloudflared
+      HIVENEST_INSTALL_DIR: /opt/hivenest/install
+      HIVENEST_ARTIFACT_DIR: /opt/hivenest/dist
+    volumes:
+      - queen-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.worker
+    image: hivenest/worker:dev
+    environment:
+      HIVENEST_QUEEN_URL: ws://queen:8080/v1/worker/ws
+      HIVENEST_BOOTSTRAP_TOKEN: hivenest-dev-token
+      HIVENEST_REGION: local
+      HIVENEST_COUNTRY: demo
+      HIVENEST_NODE_ID: docker-worker-1
+      HIVENEST_GUARD_INTERVAL_SEC: "30"
+    depends_on:
+      queen:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  queen-data:

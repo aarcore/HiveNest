@@ -1,0 +1,21 @@
+[Unit]
+Description=HiveNest Worker (工蜂)
+Documentation=https://github.com/hivenest/hivenest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/hivenest/worker.env
+ExecStart=/usr/local/bin/hivenest-worker
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+# Hardening (adjust if you need broader host access for modules)
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
