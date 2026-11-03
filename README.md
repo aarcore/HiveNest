@@ -89,4 +89,8 @@ Early usable MVP. Display name **Hive Nest**; technical ids `hivenest`, `app.hiv
 
 ## License
 
-TBD.
+Hive Nest is released under the [MIT License](LICENSE).
+
+Copyright (c) 2026 Aaron
+
+You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies of this software. Copies and substantial portions must keep the copyright notice and the permission notice in [LICENSE](LICENSE). The software is provided "as is", without warranty.
