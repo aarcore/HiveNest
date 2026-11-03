@@ -1,0 +1,159 @@
+# Build unsigned desktop installers and attach them to a GitHub Release.
+# Trigger: push a tag named v* (for example v0.1.0).
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    name: macOS arm64 DMG
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build unsigned app and DMG
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ver="${VERSION#v}"
+          make VERSION="$ver" prepare-sidecars
+          make VERSION="$ver" sessiond
+          triple=$(rustc -vV | awk '/host:/ {print $2}')
+          cp bin/sessiond "client/src-tauri/binaries/sessiond-$triple"
+          cd client && npm ci && npx tauri build --bundles app
+          cd ..
+          app="client/src-tauri/target/release/bundle/macos/Hive Nest.app"
+          mkdir -p dist
+          bash scripts/make-dmg.sh "$app" "dist/HiveNest-${ver}-macos-aarch64-unsigned.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/HiveNest-*-macos-aarch64-unsigned.dmg
+          if-no-files-found: error
+
+  linux:
+    name: Linux amd64 packages
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux WebKit / Tauri deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev patchelf libssl-dev
+      - name: Build unsigned deb and AppImage
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ver="${VERSION#v}"
+          make VERSION="$ver" prepare-sidecars
+          make VERSION="$ver" sessiond
+          triple=$(rustc -vV | awk '/host:/ {print $2}')
+          cp bin/sessiond "client/src-tauri/binaries/sessiond-$triple"
+          cd client && npm ci && npx tauri build --bundles deb,appimage
+          cd ..
+          mkdir -p dist
+          cp client/src-tauri/target/release/bundle/deb/*.deb "dist/HiveNest-${ver}-linux-amd64-unsigned.deb"
+          cp client/src-tauri/target/release/bundle/appimage/*.AppImage "dist/HiveNest-${ver}-linux-amd64-unsigned.AppImage"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: dist/HiveNest-*-linux-amd64-unsigned.*
+          if-no-files-found: error
+
+  windows:
+    name: Windows x64 installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build unsigned NSIS installer
+        shell: bash
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          ver="${VERSION#v}"
+          make VERSION="$ver" prepare-sidecars
+          make VERSION="$ver" sessiond
+          triple=$(rustc -vV | awk '/host:/ {print $2}')
+          cp bin/sessiond.exe "client/src-tauri/binaries/sessiond-${triple}.exe" 2>/dev/null \
+            || cp bin/sessiond "client/src-tauri/binaries/sessiond-${triple}.exe"
+          cd client && npm ci && npx tauri build --bundles nsis
+          cd ..
+          mkdir -p dist
+          cp client/src-tauri/target/release/bundle/nsis/*.exe "dist/HiveNest-${ver}-windows-x64-unsigned.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/HiveNest-*-windows-x64-unsigned.exe
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: [macos, linux, windows]
+    if: always() && (needs.macos.result == 'success' || needs.linux.result == 'success' || needs.windows.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS
+          ls -lh
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.ref_name }}"
+          notes=$(printf '%s\n' \
+            "Unsigned desktop builds for Hive Nest ${tag}." \
+            "" \
+            "- macOS Apple Silicon: HiveNest-*-macos-aarch64-unsigned.dmg" \
+            "- Linux x86_64: .deb and .AppImage" \
+            "- Windows x64: NSIS .exe" \
+            "" \
+            "These installers are not Apple-notarized or Authenticode-signed. On macOS, Gatekeeper may ask you to open the app from Finder the first time.")
+          gh release create "$tag" dist/* \
+            --repo "${{ github.repository }}" \
+            --title "Hive Nest ${tag}" \
+            --notes "$notes"
