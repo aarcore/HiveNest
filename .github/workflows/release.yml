@@ -43,10 +43,16 @@ jobs:
           app="client/src-tauri/target/release/bundle/macos/Hive Nest.app"
           mkdir -p dist
           bash scripts/make-dmg.sh "$app" "dist/HiveNest-${ver}-macos-aarch64-unsigned.dmg"
+          pkgbuild \
+            --component "$app" \
+            --install-location /Applications \
+            "dist/HiveNest-${ver}-macos-aarch64-unsigned.pkg"
       - uses: actions/upload-artifact@v4
         with:
           name: release-macos
-          path: dist/HiveNest-*-macos-aarch64-unsigned.dmg
+          path: |
+            dist/HiveNest-*-macos-aarch64-unsigned.dmg
+            dist/HiveNest-*-macos-aarch64-unsigned.pkg
           if-no-files-found: error
 
   linux:
@@ -146,14 +152,19 @@ jobs:
         run: |
           tag="${{ github.ref_name }}"
           notes=$(printf '%s\n' \
-            "Unsigned desktop builds for Hive Nest ${tag}." \
+            "Installer files for Hive Nest ${tag}. These are not zip or tar archives." \
             "" \
-            "- macOS Apple Silicon: HiveNest-*-macos-aarch64-unsigned.dmg" \
-            "- Linux x86_64: .deb and .AppImage" \
-            "- Windows x64: NSIS .exe" \
+            "- Windows x64: NSIS setup .exe" \
+            "- Linux x86_64: .deb package, plus an AppImage you can run directly" \
+            "- macOS Apple Silicon: .pkg installer and .dmg disk image" \
             "" \
-            "These installers are not Apple-notarized or Authenticode-signed. On macOS, Gatekeeper may ask you to open the app from Finder the first time.")
-          gh release create "$tag" dist/* \
-            --repo "${{ github.repository }}" \
-            --title "Hive Nest ${tag}" \
-            --notes "$notes"
+            "Builds are unsigned. macOS Gatekeeper may require opening the installer from Finder the first time.")
+          if gh release view "$tag" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/* --repo "${{ github.repository }}" --clobber
+            gh release edit "$tag" --repo "${{ github.repository }}" --title "Hive Nest ${tag}" --notes "$notes"
+          else
+            gh release create "$tag" dist/* \
+              --repo "${{ github.repository }}" \
+              --title "Hive Nest ${tag}" \
+              --notes "$notes"
+          fi
