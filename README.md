@@ -1,8 +1,22 @@
 # Hive Nest
 
+<p align="center">
+  <img src="docs/images/logo.png" alt="Hive Nest" width="128" />
+</p>
+
 Local **SSH client** with a **session-scoped Agent**: connect to a host, use a real PTY terminal, and run assistant-proposed commands that stay visible and require approval for medium/high risk.
 
 > **MVP:** UI + **`sessiond`** sidecar on your machine. Remote hosts only need **OpenSSH `sshd`**.
+
+## Screenshots
+
+Example hosts only (`web-01`, `db-01`, and `bastion` on `example.net`). No live machines or personal data.
+
+![Host list, terminal, and Agent](docs/images/workspace.png)
+
+![Medium-risk command waiting for approval](docs/images/approval.png)
+
+![Agent stays on the selected session](docs/images/sessions.png)
 
 ## Features
 
