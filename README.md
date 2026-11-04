@@ -85,8 +85,19 @@ Cross-compile sidecars: `make prepare-sidecars` or `make release-sessiond`.
 
 ## Architecture
 
-```text
-[Client UI + Agent]  ↔  [sessiond @ 127.0.0.1]  --SSH-->  [remote sshd]
+The app on your computer never opens SSH itself. It talks only to `sessiond` on this machine. `sessiond` is the process that connects to the remote host.
+
+```mermaid
+flowchart LR
+  subgraph yours["Your computer"]
+    UI["Client UI + Agent"]
+    SD["sessiond<br/>127.0.0.1:7788"]
+    UI -->|"local HTTP and terminal socket"| SD
+  end
+  subgraph host["Remote host"]
+    SSH["sshd"]
+  end
+  SD -->|"SSH"| SSH
 ```
 
 - **`client/`** — Vite + React + xterm; optional Tauri shell  
