@@ -1,7 +1,7 @@
 # Hive Nest
 
 <p align="center">
-  <img src="docs/images/logo.png" alt="Hive Nest" width="128" />
+  <img src="docs/images/logo.svg" alt="Hive Nest" width="96" />
 </p>
 
 Local **SSH client** with a **session-scoped Agent**: connect to a host, use a real PTY terminal, and run assistant-proposed commands that stay visible and require approval for medium/high risk.
