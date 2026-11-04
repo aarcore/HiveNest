@@ -8,13 +8,17 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-C9A227?style=flat-square&labelColor=333333"></a>
-  <img alt="version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-E07A3D?style=flat-square&labelColor=333333">
+  <img alt="version 0.1.1" src="https://img.shields.io/badge/version-0.1.1-E07A3D?style=flat-square&labelColor=333333">
   <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-1F8A8A?style=flat-square&labelColor=333333">
   <img alt="Linux" src="https://img.shields.io/badge/platform-Linux-2F6FDB?style=flat-square&labelColor=333333">
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-C4473A?style=flat-square&labelColor=333333">
   <img alt="sessiond sidecar" src="https://img.shields.io/badge/runtime-sessiond-3FA36A?style=flat-square&labelColor=333333">
   <img alt="Tauri React Go" src="https://img.shields.io/badge/stack-Tauri%20%7C%20React%20%7C%20Go-111111?style=flat-square&labelColor=333333">
 </p>
+
+Hive Nest is a calm place to run SSH. Every tab is one host, with a real terminal on the left and an Agent beside it that works on that same session only — it never reaches across to another machine. Anything that could hurt, like writing files or removing them, waits for your approval and stays in view.
+
+No agent runs on your servers. A small local sidecar, `sessiond`, holds the connections, so remote hosts only need OpenSSH.
 
 ## Screenshots
 
@@ -26,15 +30,19 @@ Example hosts only (`web-01`, `db-01`, and `bastion` on `example.net`). No live 
 
 ![Agent stays on the selected session](docs/images/sessions.png)
 
-## Features
+## Why Hive Nest
 
-- Multi-host **session tabs** — Agent never cross-executes to another machine
-- **Interactive terminal** — xterm.js PTY over the same SSH session as Agent exec
-- **Session-scoped Agent** — multi-turn chat; medium/high risk needs Approve
-- **SSH** — key, password, ssh-agent, known_hosts TOFU, jump / ProxyJump
-- **Structured tools** — read-oriented helpers plus gated writes/removes
-- **Desktop or browser** — Tauri 2 (Windows / Linux / macOS) or Vite UI against local sessiond
-- **English-primary UI** — additional locales in Settings
+**One host per tab.** Open several servers at once. Each tab keeps its own terminal and its own Agent, so a conversation about one machine can never touch another.
+
+**A terminal that is actually a terminal.** A real PTY over `xterm.js`, sharing the same SSH session the Agent uses. What you read in the chat is what happened in the shell.
+
+**Approval instead of blind trust.** The Agent proposes a command with a reason and a risk level. Read-only work at low risk can run straight away; anything that writes, deletes, or otherwise changes state waits for your click.
+
+**SSH without the archaeology.** Keys, passwords, and `ssh-agent` all work, with TOFU host-key checks and jump chains or `ProxyJump` for bastioned networks.
+
+**Runs where you already work.** A Tauri desktop app on macOS, Linux, and Windows, or the same UI in a browser against a local `sessiond`. Settings ship in English, 简体中文, 繁體中文, Español, Français, Deutsch, Português, Українська, 日本語, and 한국어.
+
+**Local by default.** Tokens and API keys stay on your machine, in the OS keychain or encrypted local storage. Hive Nest does not phone home.
 
 ## Requirements
 
@@ -100,11 +108,11 @@ flowchart LR
   SD -->|"SSH"| SSH
 ```
 
-- **`client/`** — Vite + React + xterm; optional Tauri shell  
-- **`sessiond/`** — Go loopback sidecar (hosts, SSH, PTY, exec, proposals, audit)  
-- **Legacy:** `queen/`, `worker/`, `web/` — optional demo; see [docs/legacy-queen-worker.md](docs/legacy-queen-worker.md)
+- **`client/`** — the UI: Vite, React, and xterm, wrapped in an optional Tauri shell
+- **`sessiond/`** — the local Go sidecar: hosts, SSH, PTY, exec, proposals, and the audit trail
+- **Legacy** — `queen/`, `worker/`, and `web/` keep the older dial-out demo around; see [docs/legacy-queen-worker.md](docs/legacy-queen-worker.md)
 
-Design docs: [docs/README.md](docs/README.md).
+Deeper notes live in [docs/README.md](docs/README.md).
 
 ## Repository layout
 
@@ -118,7 +126,7 @@ queen/ worker/ protocol/ deploy/ install/   Legacy stack
 
 ## Status
 
-Early usable MVP. Display name **Hive Nest**; technical ids `hivenest`, `app.hivenest.client`.
+An early but usable MVP. The product is called **Hive Nest**; technical ids stay `hivenest` and `app.hivenest.client`.
 
 ## License
 
