@@ -1,12 +1,20 @@
-# Hive Nest
+<h1 align="center">Hive Nest</h1>
+
+<p align="center"><strong>Local SSH client with a session-scoped Agent</strong></p>
 
 <p align="center">
-  <img src="docs/images/logo.svg" alt="Hive Nest" width="96" />
+  Multi-host sessions · Interactive terminal · Approved commands · Jump hosts · Desktop and browser
 </p>
 
-Local **SSH client** with a **session-scoped Agent**: connect to a host, use a real PTY terminal, and run assistant-proposed commands that stay visible and require approval for medium/high risk.
-
-> **MVP:** UI + **`sessiond`** sidecar on your machine. Remote hosts only need **OpenSSH `sshd`**.
+<p align="center">
+  <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-C9A227?style=flat-square&labelColor=333333"></a>
+  <img alt="version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-E07A3D?style=flat-square&labelColor=333333">
+  <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-1F8A8A?style=flat-square&labelColor=333333">
+  <img alt="Linux" src="https://img.shields.io/badge/platform-Linux-2F6FDB?style=flat-square&labelColor=333333">
+  <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-C4473A?style=flat-square&labelColor=333333">
+  <img alt="sessiond sidecar" src="https://img.shields.io/badge/runtime-sessiond-3FA36A?style=flat-square&labelColor=333333">
+  <img alt="Tauri React Go" src="https://img.shields.io/badge/stack-Tauri%20%7C%20React%20%7C%20Go-111111?style=flat-square&labelColor=333333">
+</p>
 
 ## Screenshots
 
