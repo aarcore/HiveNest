@@ -111,15 +111,25 @@ export function parseFleetReply(raw: string): ParsedReply {
   const reply = str('reply')
   const action = str('action').toLowerCase() || 'done'
 
+  // A reply is what the user reads. When the model omits one, fall back to a
+  // short human line for the action instead of showing raw JSON.
+  const fallbackReply =
+    action === 'run'
+      ? `Running on ${str('target') || 'every server'}.`
+      : action === 'list'
+        ? 'Reading the server roster.'
+        : ''
+  const said = reply || fallbackReply
+
   if (action === 'run') {
     return {
       action: { kind: 'run', target: str('target') || 'all', command: str('command'), reason: str('reason') },
       secrets,
-      text: raw,
+      text: said,
     }
   }
   if (action === 'list') {
-    return { action: { kind: 'list' }, secrets, text: raw }
+    return { action: { kind: 'list' }, secrets, text: said }
   }
   if (action === 'register') {
     const password = str('password')

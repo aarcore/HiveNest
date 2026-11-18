@@ -15,6 +15,26 @@ describe('fleet reply parsing', () => {
     })
   })
 
+  it('shows the reply, never raw JSON', () => {
+    const run = parseFleetReply(
+      '{"action":"run","target":"all","command":"uptime","reply":"Checking uptime."}',
+    )
+    expect(run.text).toBe('Checking uptime.')
+    expect(run.text).not.toContain('{')
+
+    const list = parseFleetReply('{"action":"list","reply":"Here is the roster."}')
+    expect(list.text).toBe('Here is the roster.')
+    expect(list.text).not.toContain('"action"')
+  })
+
+  it('falls back to a readable line when the model omits reply', () => {
+    const run = parseFleetReply('{"action":"run","command":"uptime"}')
+    expect(run.text).toBe('Running on every server.')
+    const list = parseFleetReply('{"action":"list"}')
+    expect(list.text).toBe('Reading the server roster.')
+    expect(list.text).not.toContain('{')
+  })
+
   it('defaults target to all and tolerates a code fence', () => {
     const { action } = parseFleetReply(
       '```json\n{"action":"run","command":"uptime","reply":"ok"}\n```',
