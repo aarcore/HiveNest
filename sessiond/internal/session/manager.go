@@ -91,6 +91,32 @@ func (m *Manager) Open(hostID string, opts OpenOptions) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	return m.openDial(hostID, &h, opts)
+}
+
+// OpenInline dials a host described in the request rather than a saved profile.
+// The Fleet Agent uses it so multi-server work never leaves host entries behind.
+// Only direct connections are supported: a saved jump chain is not looked up.
+func (m *Manager) OpenInline(p store.HostProfile, opts OpenOptions) (*Session, error) {
+	if strings.TrimSpace(p.Host) == "" || strings.TrimSpace(p.User) == "" {
+		return nil, fmt.Errorf("host and user are required")
+	}
+	if p.Port <= 0 {
+		p.Port = 22
+	}
+	if !strings.HasPrefix(p.ID, InlineHostIDPrefix) {
+		p.ID = InlineHostIDPrefix + uuid.NewString()[:8]
+	}
+	if strings.TrimSpace(p.Name) == "" {
+		p.Name = p.Host
+	}
+	// Inline hosts cannot resolve jump profile ids; refuse rather than dial wrong.
+	p.JumpHostIDs = nil
+	p.JumpHostID = ""
+	return m.openDial(p.ID, &p, opts)
+}
+
+func (m *Manager) openDial(hostID string, h *store.HostProfile, opts OpenOptions) (*Session, error) {
 	identity := h.IdentityFile
 	useAgent := h.UseAgent
 	if h.AuthMethod == store.AuthMethodPassword {

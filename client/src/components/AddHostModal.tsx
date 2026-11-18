@@ -3,6 +3,7 @@ import { createHost, updateHost, type AuthMethod, type Host, type JumpHopSpec } 
 import { forgetPassword, isPasswordRemembered, loadPassword, savePassword } from '../passwordCache'
 import { useI18n } from '../i18n'
 import { IconButton, IconArrowDown, IconArrowUp, IconPlus, IconX } from './icons'
+import { PasswordInput } from './PasswordInput'
 
 function emptyHop(method: AuthMethod = 'key'): JumpHopSpec {
   return {
@@ -477,9 +478,8 @@ export function AddHostModal({ open, host, hosts = [], onClose, onCreated, onUpd
             <div className="password-block">
               <label className="password-label">
                 {t('password')}
-                <input
-                  className="password-input"
-                  type="password"
+                <PasswordInput
+                  inputClassName="password-input"
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

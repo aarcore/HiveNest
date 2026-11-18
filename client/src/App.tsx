@@ -32,6 +32,7 @@ import {
 } from './components/ConnectPasswordModal'
 import { HostKeyModal } from './components/HostKeyModal'
 import { HostSidebar } from './components/HostSidebar'
+import { FleetPanel } from './components/FleetPanel'
 import { SettingsModal } from './components/SettingsModal'
 import { HelpModal } from './components/HelpModal'
 import { SessionTabs } from './components/SessionTabs'
@@ -56,6 +57,7 @@ export function App() {
   const [connectingHostId, setConnectingHostId] = useState<string | null>(null)
   const [modal, setModal] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [fleetOpen, setFleetOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [editingHost, setEditingHost] = useState<Host | null>(null)
   const [pwHost, setPwHost] = useState<Host | null>(null)
@@ -721,6 +723,7 @@ export function App() {
           onDelete={(id) => void onDelete(id)}
           onHelp={() => setHelpOpen(true)}
           onSettings={() => setSettingsOpen(true)}
+          onFleet={() => setFleetOpen(true)}
         />
 
         <div className="center-stack">
@@ -855,6 +858,11 @@ export function App() {
       />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <FleetPanel
+        open={fleetOpen}
+        onClose={() => setFleetOpen(false)}
+        onRosterChange={() => void refreshHosts()}
+      />
     </div>
   )
 }

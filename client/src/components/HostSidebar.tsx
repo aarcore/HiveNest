@@ -16,6 +16,7 @@ import {
   IconConnect,
   IconDisconnect,
   IconEdit,
+  IconFleet,
   IconHelp,
   IconKey,
   IconLock,
@@ -43,6 +44,7 @@ type Props = {
   onDelete: (id: string) => void
   onHelp: () => void
   onSettings: () => void
+  onFleet: () => void
 }
 
 type RailTip = {
@@ -118,6 +120,7 @@ function SidebarFooterControls({
   onSettings,
   onRefresh,
   onAdd,
+  onFleet,
   onToggleCollapse,
 }: {
   collapsed: boolean
@@ -125,6 +128,7 @@ function SidebarFooterControls({
   onSettings: () => void
   onRefresh: () => void
   onAdd: () => void
+  onFleet: () => void
   onToggleCollapse: () => void
 }) {
   const { t } = useI18n()
@@ -161,6 +165,14 @@ function SidebarFooterControls({
           className="sidebar-app-icon"
           chrome
           size="sm"
+          label={t('fleetOpen')}
+          onClick={onFleet}
+          icon={<IconFleet size={16} />}
+        />
+        <IconButton
+          className="sidebar-app-icon"
+          chrome
+          size="sm"
           label={t('help')}
           onClick={onHelp}
           icon={<IconHelp size={16} />}
@@ -183,6 +195,7 @@ export function HostSidebar(props: Props) {
   const {
     hosts, activeHostId, sessionHostIds, connectingHostId, collapsed, onToggleCollapse,
     onRefresh, onAdd, onEdit, onSelect, onConnect, onDisconnect, onDelete, onHelp, onSettings,
+    onFleet,
   } = props
   const liveSet = new Set(sessionHostIds)
   const connecting = !!connectingHostId
@@ -354,6 +367,7 @@ export function HostSidebar(props: Props) {
       collapsed={collapsed}
       onHelp={onHelp}
       onSettings={onSettings}
+      onFleet={onFleet}
       onRefresh={onRefresh}
       onAdd={onAdd}
       onToggleCollapse={onToggleCollapse}

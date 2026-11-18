@@ -261,6 +261,32 @@ export const en = {
   arkPlanPayg: 'Pay-as-you-go (/api/v3, not plan quota)',
   arkPlanHint:
     'Agent Plan and Coding Plan each need a dedicated API key from that plan\'s console. Switching plan updates the base URL unless you customized it away from a known preset.',
+  fleetTitle: 'Fleet',
+  fleetSubtitle: 'One Agent, many servers. Not tied to a session.',
+  fleetChat: 'Chat',
+  fleetRoster: 'Servers',
+  fleetEmpty: 'Tell the Agent what you want to do across machines. It works out which servers to touch.',
+  fleetExample1: 'Add 10.0.0.11–13 as ubuntu, password hunter2, group prod-k8s.',
+  fleetExample2: 'Create a three-node Kubernetes cluster on prod-k8s and join the workers.',
+  fleetExample3: 'Check disk and kernel version on every server.',
+  fleetPlaceholder: 'Describe the task, or paste server details…  (⌘↵ to send)',
+  fleetSend: 'Send',
+  fleetAddServer: 'Add server',
+  fleetEditServer: 'Edit server',
+  fleetGroups: 'Groups',
+  fleetRosterEmpty: 'No servers yet. Add one here, or just describe it in chat.',
+  fleetRegistered: 'Added',
+  fleetHostRequired: 'A host address is required.',
+  fleetUserRequired: 'A user is required.',
+  fleetAuthAsk: 'Ask when connecting',
+  fleetPasswordHint:
+    'Passwords belong in the chat, not here. Say them once and the Agent hands them to sessiond at connect time.',
+  fleetNoProvider: 'Configure a model provider in Settings before using Fleet.',
+  fleetOpen: 'Fleet Agent',
+  group: 'Group',
+  role: 'Role',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
 } as const
 
 export type MessageKey = keyof typeof en

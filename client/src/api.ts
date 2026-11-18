@@ -197,6 +197,29 @@ export const openSession = (host_id: string, opts: OpenSessionOpts = {}) => {
   return api<SessionInfo>('/v1/sessions', { method: 'POST', body: JSON.stringify(body) })
 }
 
+export type InlineHostInput = {
+  name?: string
+  host: string
+  port?: number
+  user: string
+  identity_file?: string
+  use_agent?: boolean
+  auth_method?: AuthMethod
+  password?: string
+  accept_host_key?: boolean
+  replace_host_key?: boolean
+}
+
+/**
+ * Open a session without saving a host profile. Used by the Fleet Agent so
+ * multi-server work leaves nothing behind in the host list.
+ */
+export const openInlineSession = (input: InlineHostInput) =>
+  api<SessionInfo>('/v1/sessions/inline', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
 export type KnownHostEntry = {
   host: string
   port: number

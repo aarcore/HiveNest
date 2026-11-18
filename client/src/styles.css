@@ -43,8 +43,8 @@
   --control-h: 32px;
   --control-radius: 8px;
   --control-pad-x: 10px;
-  /* Top chrome: compact ~42px; traffic lights + tabs + fold share vertical center */
-  --titlebar-block: 42px;
+  /* Top chrome: compact 40px; traffic lights sit inside it, tabs stay centered */
+  --titlebar-block: 40px;
   --traffic-light-safe-left: 112px; /* clear traffic lights + gap before session tabs */
   --titlebar-control-size: 26px;
   --host-live-bg: color-mix(in srgb, var(--accent-2, #16a34a) 12%, transparent);
@@ -496,12 +496,21 @@ select {
 /* Hosts tools live in sidebar footer (flat / compact) */
 .sidebar-footer-controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 2px;
   width: 100%;
   min-width: 0;
+}
+/* Expanded sidebar: all footer actions sit on one row, tools first then app actions. */
+.sidebar-footer-controls:not(.is-rail) .sidebar-host-tools,
+.sidebar-footer-controls:not(.is-rail) .sidebar-app-controls {
+  flex-wrap: nowrap;
+  flex-direction: row;
+}
+.sidebar-footer-controls:not(.is-rail) .sidebar-app-controls {
+  margin-left: auto;
 }
 .sidebar-footer-controls.is-rail {
   flex-direction: column;
@@ -513,7 +522,7 @@ select {
 .sidebar-host-tools {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
   flex: 0 0 auto;
 }
 .sidebar-host-tools.is-rail {
@@ -593,8 +602,8 @@ select {
 }
 .sidebar-app-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 2px;
   align-items: center;
 }
 .sidebar-app-controls.is-rail {
@@ -2832,3 +2841,286 @@ html[data-app-toasts='1'] .terminal-pane > .term-host {
 /* legacy config badge — unused (status is Idle/Running text) */
 .agent-config-icon { display: none; }
 
+
+/* ---------- Fleet Agent (multi-server, session-free) ---------- */
+
+.fleet-overlay {
+  position: fixed;
+  /* Start below the window chrome: the traffic lights are native and float above
+     the webview, so a panel that covers the title bar will always collide. */
+  top: var(--titlebar-block, 52px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  animation: fleet-in 120ms ease-out;
+}
+@keyframes fleet-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fleet-overlay { animation: none; }
+}
+
+.fleet-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--topbar-bg);
+}
+.fleet-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fleet-header-main strong { font-size: 14px; }
+.fleet-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.fleet-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-size: 13px;
+}
+.fleet-tab:hover { background: var(--hover-fill); color: var(--text); }
+.fleet-tab.is-active {
+  background: var(--elevated);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.fleet-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.fleet-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  min-height: 0;
+}
+.fleet-lines { display: flex; flex-direction: column; gap: 8px; max-width: 920px; }
+
+.fleet-empty { max-width: 640px; }
+.fleet-empty p { margin: 0 0 10px; color: var(--muted); }
+.fleet-examples {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fleet-line { font-size: 13px; }
+.fleet-step {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--elevated-muted);
+  color: var(--muted);
+}
+.fleet-result {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+  overflow: hidden;
+}
+.fleet-result.is-failed { border-color: var(--danger-border); }
+.fleet-result-title {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--elevated-muted);
+}
+.fleet-result-body {
+  margin: 0;
+  padding: 10px;
+  max-height: 320px;
+  overflow: auto;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fleet-approval {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+  box-shadow: var(--shadow);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fleet-approval-head { display: flex; align-items: center; gap: 8px; }
+.fleet-command {
+  margin: 0;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--elevated-muted);
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fleet-approval-actions { display: flex; gap: 8px; }
+
+.fleet-compose {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px 16px;
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fleet-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  max-height: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+  color: var(--text);
+  font: inherit;
+}
+.fleet-input:focus { outline: none; border-color: var(--accent-border); box-shadow: var(--focus-ring); }
+.fleet-compose-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+.fleet-roster-body { padding: 16px; overflow-y: auto; gap: 12px; }
+.fleet-roster-toolbar { display: flex; align-items: center; gap: 12px; }
+.fleet-roster-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 920px; }
+.fleet-roster-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+}
+.fleet-roster-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fleet-roster-name { font-weight: 600; font-size: 13px; }
+.fleet-roster-meta { display: flex; gap: 6px; margin-top: 2px; }
+.fleet-roster-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+
+.fleet-form-backdrop {
+  position: fixed;
+  /* Same rule as the panel: never sit under the native window controls. */
+  top: var(--titlebar-block, 52px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--backdrop);
+  padding: 24px;
+}
+.fleet-form {
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fleet-form-head { display: flex; align-items: center; justify-content: space-between; }
+.fleet-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.fleet-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.fleet-field-wide { grid-column: 1 / -1; }
+.fleet-field input,
+.fleet-field select {
+  height: var(--control-h);
+  padding: 0 var(--control-pad-x);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--elevated-muted);
+  color: var(--text);
+  font-size: 13px;
+}
+.fleet-field input:focus,
+.fleet-field select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: var(--focus-ring);
+}
+.fleet-form-hint { margin: 0; }
+.fleet-form-error { margin: 0; color: var(--danger-fg); font-size: 12px; }
+.fleet-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 640px) {
+  .fleet-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .fleet-header { flex-wrap: wrap; }
+  .fleet-roster-item { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---------- Password field with reveal toggle ---------- */
+
+.password-field {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+.password-field > input {
+  /* Leave room for the toggle so long values never slide under it. */
+  padding-right: 38px !important;
+}
+.password-reveal {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.75;
+}
+.password-reveal:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--hover-fill);
+  color: var(--text);
+}
+.password-reveal:focus-visible {
+  opacity: 1;
+  outline: none;
+  color: var(--text);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-fg) 35%, transparent);
+}
+.password-reveal:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

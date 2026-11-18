@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,8 +21,16 @@ import (
 // LocalHostID is the sentinel host_id for a machine-local shell session.
 const LocalHostID = "__local__"
 
+// InlineHostIDPrefix marks sessions opened from request-supplied connection
+// details (Fleet Agent) instead of a saved host profile.
+const InlineHostIDPrefix = "__inline__"
+
 func IsLocalHostID(id string) bool {
 	return id == LocalHostID || id == "local"
+}
+
+func IsInlineHostID(id string) bool {
+	return strings.HasPrefix(id, InlineHostIDPrefix)
 }
 
 func (m *Manager) OpenLocal() (*Session, error) {

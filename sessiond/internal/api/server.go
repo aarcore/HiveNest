@@ -58,6 +58,7 @@ func (s *Server) Handler() http.Handler {
 
 	api.HandleFunc("GET /v1/sessions", s.handleListSessions)
 	api.HandleFunc("POST /v1/sessions", s.handleOpenSession)
+	api.HandleFunc("POST /v1/sessions/inline", s.handleOpenInlineSession)
 	api.HandleFunc("GET /v1/sessions/{id}", s.handleGetSession)
 	api.HandleFunc("DELETE /v1/sessions/{id}", s.handleCloseSession)
 	api.HandleFunc("POST /v1/sessions/{id}/exec", s.handleExec)
@@ -213,6 +214,73 @@ func (s *Server) handleOpenSession(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusBadRequest
 		}
 		writeErr(w, status, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"id": sess.ID, "host_id": sess.HostID, "host_name": sess.HostName,
+		"user": sess.User, "remote": sess.Remote, "created_at": sess.CreatedAt, "has_pty": sess.HasPTY,
+		"is_local": sess.IsLocal,
+	})
+}
+
+// handleOpenInlineSession opens a session from connection details in the request.
+// Nothing is persisted: the Fleet Agent uses this for one-shot work across servers.
+func (s *Server) handleOpenInlineSession(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Name           string `json:"name"`
+		Host           string `json:"host"`
+		Port           int    `json:"port"`
+		User           string `json:"user"`
+		IdentityFile   string `json:"identity_file"`
+		UseAgent       bool   `json:"use_agent"`
+		AuthMethod     string `json:"auth_method"`
+		Password       string `json:"password"`
+		AcceptHostKey  bool   `json:"accept_host_key"`
+		ReplaceHostKey bool   `json:"replace_host_key"`
+	}
+	if err := readJSON(r, &body); err != nil {
+		writeErr(w, http.StatusBadRequest, err)
+		return
+	}
+	sess, err := s.sessions.OpenInline(store.HostProfile{
+		Name:         body.Name,
+		Host:         body.Host,
+		Port:         body.Port,
+		User:         body.User,
+		IdentityFile: body.IdentityFile,
+		UseAgent:     body.UseAgent,
+		AuthMethod:   body.AuthMethod,
+	}, session.OpenOptions{
+		Password:       body.Password,
+		AcceptHostKey:  body.AcceptHostKey,
+		ReplaceHostKey: body.ReplaceHostKey,
+	})
+	body.Password = ""
+	if err != nil {
+		if hk := session.AsHostKeyIssue(err); hk != nil {
+			writeJSON(w, http.StatusConflict, map[string]any{
+				"error":    hk.Error(),
+				"code":     hk.Code,
+				"host_key": hk,
+			})
+			return
+		}
+		var pref *session.PasswordRequiredError
+		if errors.As(err, &pref) {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error":   pref.Message,
+				"code":    "password_required",
+				"kind":    pref.Kind,
+				"host_id": pref.HostID,
+			})
+			return
+		}
+		// Malformed connection details are the caller's fault, not a dial failure.
+		if strings.Contains(err.Error(), "required") {
+			writeErr(w, http.StatusBadRequest, err)
+			return
+		}
+		writeErr(w, http.StatusBadGateway, err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{

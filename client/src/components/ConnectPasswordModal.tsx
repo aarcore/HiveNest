@@ -8,6 +8,7 @@ import {
   savePassword,
 } from '../passwordCache'
 import { useI18n } from '../i18n'
+import { PasswordInput } from './PasswordInput'
 
 export type ConnectCredentials = {
   password?: string
@@ -191,10 +192,9 @@ export function ConnectPasswordModal({
                 <label key={j.id} className="password-label">
                   {t('jumpPassword')} [{idx + 1}] {j.name}
                   {jumpPasswordOptional ? ` (${t('optional')})` : ''}
-                  <input
+                  <PasswordInput
                     ref={idx === 0 && !needTargetPassword ? inputRef : undefined}
-                    className="password-input"
-                    type="password"
+                    inputClassName="password-input"
                     name={`ssh-jump-password-${j.id}`}
                     autoComplete="current-password"
                     value={hopPasswords[j.id] || ''}
@@ -212,10 +212,9 @@ export function ConnectPasswordModal({
             <label className="password-label">
               {t('jumpPassword')}
               {jumpPasswordOptional ? ` (${t('optional')})` : ''}
-              <input
+              <PasswordInput
                 ref={!needTargetPassword ? inputRef : undefined}
-                className="password-input"
-                type="password"
+                inputClassName="password-input"
                 name="ssh-jump-password"
                 autoComplete="current-password"
                 value={jumpPassword}
@@ -233,10 +232,9 @@ export function ConnectPasswordModal({
           {needTargetPassword ? (
             <label className="password-label">
               {needJumpPassword ? t('targetPassword') : t('password')}
-              <input
+              <PasswordInput
                 ref={inputRef}
-                className="password-input"
-                type="password"
+                inputClassName="password-input"
                 name="ssh-password"
                 autoComplete="current-password"
                 value={password}

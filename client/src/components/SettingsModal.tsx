@@ -53,6 +53,7 @@ import {
   IconUpload,
   IconX,
 } from './icons'
+import { PasswordInput } from './PasswordInput'
 
 type Props = {
   open: boolean
@@ -792,8 +793,8 @@ export function SettingsModal({ open, onClose }: Props) {
                         </label>
                         <label className="field-stable">
                           {t('apiKey')}
-                          <input
-                            type="password"
+                          <PasswordInput
+                            inputClassName="api-key-input"
                             autoComplete="new-password"
                             value={p.apiKey}
                             onChange={(e) => patchProvider(id, { apiKey: e.target.value })}

@@ -28,6 +28,20 @@ export function IconHelp(p: IconProps = {}) {
   )
 }
 
+/** Stacked servers: the Fleet Agent works across many machines. */
+export function IconFleet(p: IconProps = {}) {
+  return (
+    <svg {...sized(p)}>
+      <rect x="3" y="4" width="18" height="6" rx="1.5" />
+      <rect x="3" y="14" width="18" height="6" rx="1.5" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
+      <line x1="7" y1="17" x2="7.01" y2="17" />
+      <line x1="12" y1="7" x2="17" y2="7" />
+      <line x1="12" y1="17" x2="17" y2="17" />
+    </svg>
+  )
+}
+
 export function IconSettings(p: IconProps = {}) {
   return (
     <svg {...sized(p)}>
@@ -291,6 +305,28 @@ export function IconLock(p: IconProps = {}) {
     <svg {...sized(p)}>
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
+
+/** Open eye: reveal a masked value. */
+export function IconEye(p: IconProps = {}) {
+  return (
+    <svg {...sized(p)}>
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+/** Eye with a slash: hide a revealed value. */
+export function IconEyeOff(p: IconProps = {}) {
+  return (
+    <svg {...sized(p)}>
+      <path d="M9.9 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.8 17.8 0 0 1-3.3 4.1" />
+      <path d="M6.2 7.2A17.6 17.6 0 0 0 2 12s3.6 7 10 7a10.4 10.4 0 0 0 4.2-.9" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <line x1="3" y1="3" x2="21" y2="21" />
     </svg>
   )
 }

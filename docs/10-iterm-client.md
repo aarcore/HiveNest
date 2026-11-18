@@ -45,6 +45,18 @@ Dev: browser at `http://127.0.0.1:5173/` with sessiond running. Prod: `make taur
 - Connect password modal; host key TOFU; jump / ProxyJump
 - English-primary i18n (+ es, fr, de, pt, uk, ja, ko, zh-CN, zh-TW)
 - Agent chat history per host (localStorage)
+- Fleet Agent: a second, session-free Agent that works across many servers, with inline (non-persisted) connections for cluster tasks
+
+## Fleet Agent
+
+The session Agent is deliberately bound to one host. Fleet is the counterpart: a panel that owns a *roster* of servers and can touch any of them in one conversation, which is what cluster setup needs.
+
+- **Roster, not sessions.** Servers are registered with name, address, user, auth mode, optional group and role. Groups drive batch work (`target: "prod-k8s"`).
+- **Connections are inline.** Fleet calls `POST /v1/sessions/inline`, which dials from details in the request and returns a session without writing a host profile. Touching twelve machines leaves twelve sessions closed and zero host entries.
+- **One command per connect.** Each step opens a session, runs one command, closes it. Slower than holding connections open, but it keeps no idle SSH sessions to machines the user touched once, and a credential change is picked up on the next step.
+- **Passwords live in the chat.** They are parsed out of the model's reply before it reaches the transcript, passed to `sessiond` at connect time, and optionally remembered in the OS vault. They are never in the prompt history, the roster, or `hosts.json`.
+- **The same risk gate applies.** `sessiond` still classifies every command. A medium/high command in Fleet surfaces as an approval card; the session is throwaway, so nothing is executed until the user agrees.
+- **Changed host keys stop the run.** First contact is trusted (TOFU, same as a normal connect); a *changed* key aborts with an error naming the previous fingerprint rather than silently accepting it.
 
 ## Not in MVP / open
 
