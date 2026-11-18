@@ -95,6 +95,9 @@ export function themeToJson(name: string, theme: ITheme): TerminalThemeJson {
   return { name, ...theme }
 }
 
+/** Terminal theme used until the user picks one in Settings. */
+export const DEFAULT_TERMINAL_THEME_ID = 'hivenest-light'
+
 export const TERMINAL_PRESETS: TerminalThemePreset[] = [
   {
     id: 'hivenest-dark',
@@ -213,7 +216,9 @@ export function findTerminalTheme(
   const c = custom.find((x) => x.id === id)
   if (c) return c.theme
   const p = TERMINAL_PRESETS.find((x) => x.id === id)
-  return (p || TERMINAL_PRESETS[0]).theme
+  if (p) return p.theme
+  const fallback = TERMINAL_PRESETS.find((x) => x.id === DEFAULT_TERMINAL_THEME_ID)
+  return (fallback || TERMINAL_PRESETS[0]).theme
 }
 
 /** Shallow-clone an ITheme so xterm's reference check always sees a new object. */

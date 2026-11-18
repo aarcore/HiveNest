@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  DEFAULT_TERMINAL_THEME_ID,
   TERMINAL_PRESETS,
   cloneXtermTheme,
   findTerminalTheme,
@@ -10,6 +11,18 @@ import {
 describe('terminal themes', () => {
   it('ships at least 8 presets', () => {
     expect(TERMINAL_PRESETS.length).toBeGreaterThanOrEqual(8)
+  })
+
+  it('defaults to a light preset', () => {
+    const def = TERMINAL_PRESETS.find((p) => p.id === DEFAULT_TERMINAL_THEME_ID)
+    expect(def, DEFAULT_TERMINAL_THEME_ID).toBeTruthy()
+    expect(def?.theme.background).toBe('#f8fafc')
+    expect(def?.theme.foreground).toBe('#0f172a')
+  })
+
+  it('falls back to the default preset for unknown ids', () => {
+    const unknown = findTerminalTheme('does-not-exist')
+    expect(unknown.background).toBe(findTerminalTheme(DEFAULT_TERMINAL_THEME_ID).background)
   })
 
   it('normalizes short hex', () => {

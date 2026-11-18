@@ -10,6 +10,7 @@ import {
 import type { ITheme } from '@xterm/xterm'
 import { APP_THEMES, applyAppThemeVars, getAppTheme, type AppThemeId } from './theme/appThemes'
 import {
+  DEFAULT_TERMINAL_THEME_ID,
   TERMINAL_PRESETS,
   cloneXtermTheme,
   findTerminalTheme,
@@ -21,6 +22,8 @@ export type ThemeMode = 'light' | 'dark'
 
 const APP_KEY = 'hivenest_app_theme_id'
 const TERM_KEY = 'hivenest_terminal_theme_id'
+const TERM_MIGRATION_KEY = 'hivenest_terminal_theme_default'
+const TERM_DEFAULT_VERSION = 'light-1'
 const CUSTOM_KEY = 'hivenest_custom_terminal_themes'
 const LEGACY_KEY = 'hivenest_theme'
 
@@ -59,7 +62,16 @@ function readAppThemeId(): AppThemeId {
 }
 
 function readTermId(): string {
-  return localStorage.getItem(TERM_KEY) || 'hivenest-dark'
+  // One-time move to the light default. Earlier builds wrote 'hivenest-dark' for
+  // anyone who never opened the theme picker, so that value is not a real choice.
+  if (localStorage.getItem(TERM_MIGRATION_KEY) !== TERM_DEFAULT_VERSION) {
+    const stored = localStorage.getItem(TERM_KEY)
+    if (!stored || stored === 'hivenest-dark') {
+      localStorage.setItem(TERM_KEY, DEFAULT_TERMINAL_THEME_ID)
+    }
+    localStorage.setItem(TERM_MIGRATION_KEY, TERM_DEFAULT_VERSION)
+  }
+  return localStorage.getItem(TERM_KEY) || DEFAULT_TERMINAL_THEME_ID
 }
 
 function readCustom(): CustomTerminalTheme[] {
@@ -130,8 +142,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     })
     setTerminalThemeIdState((cur) => {
       if (cur !== id) return cur
-      localStorage.setItem(TERM_KEY, 'hivenest-dark')
-      return 'hivenest-dark'
+      localStorage.setItem(TERM_KEY, DEFAULT_TERMINAL_THEME_ID)
+      return DEFAULT_TERMINAL_THEME_ID
     })
   }, [])
 
