@@ -104,7 +104,7 @@ Workflow: [`.github/workflows/desktop.yml`](../.github/workflows/desktop.yml)
 | `sessiond-sidecars` | ubuntu | All `client/src-tauri/binaries/sessiond-*` triples |
 | `tauri-linux` | ubuntu-22.04 | `.deb` / AppImage under `bundle/` |
 | `tauri-windows` | windows-latest | NSIS `.exe` / `.msi` under `bundle/` |
-| `tauri-macos` | macos-14 | `.app` + optional `dist/HiveNest-unsigned.dmg` via `make-dmg` |
+| `tauri-macos` | macos-latest | `.app` + optional `dist/HiveNest-unsigned.dmg` via `make-dmg` |
 
 Triggers on pushes/PRs touching `client/`, `sessiond/`, `Makefile`, or the workflow. Artifacts upload as `hivenest-*-unsigned`. **No signing secrets** are required or expected.
 
