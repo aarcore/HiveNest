@@ -47,6 +47,14 @@ import { IconButton, IconChevronLeft, IconChevronRight } from './components/icon
 import { checkSessionLink } from './sessionLink'
 import { startWindowDrag, toggleFillScreen } from './windowChrome'
 
+/** Bottom dock: the Agent may grow to this share of the window height. */
+const AGENT_BOTTOM_MAX_RATIO = 0.8
+const AGENT_BOTTOM_MIN = 160
+/** Right dock: the Agent may widen to this share of the app width. */
+const AGENT_COL_MAX_RATIO = 0.5
+const AGENT_COL_MIN = 260
+const AGENT_COL_DEFAULT = 340
+
 export function App() {
   const { t } = useI18n()
   const toast = useToast()
@@ -107,11 +115,24 @@ export function App() {
     }
     return 240
   })
+  const [agentColW, setAgentColW] = useState(() => {
+    try {
+      const n = Number(localStorage.getItem('hivenest_agent_col_w'))
+      if (Number.isFinite(n) && n >= AGENT_COL_MIN) return Math.round(n)
+    } catch {
+      /* ignore */
+    }
+    return AGENT_COL_DEFAULT
+  })
   const workspaceRef = useRef<HTMLDivElement>(null)
   const agentBottomHRef = useRef(agentBottomH)
   agentBottomHRef.current = agentBottomH
+  const agentColWRef = useRef(agentColW)
+  agentColWRef.current = agentColW
   const agentResizeDrag = useRef<{ startY: number; startH: number } | null>(null)
+  const agentColDrag = useRef<{ startX: number; startW: number } | null>(null)
   const [agentResizing, setAgentResizing] = useState(false)
+  const [agentColResizing, setAgentColResizing] = useState(false)
 
   const connecting = !!connectingHostId
   const sessionHostIds = useMemo(
@@ -157,8 +178,20 @@ export function App() {
 
   const clampAgentBottomH = useCallback((h: number) => {
     const workspaceH = workspaceRef.current?.clientHeight || window.innerHeight
-    const max = Math.max(160, Math.floor(workspaceH / 2))
-    return Math.min(max, Math.max(160, Math.round(h)))
+    // The Agent may take up to 80% of the window height; keep a readable strip
+    // of terminal above it and a sane floor so the panel stays usable.
+    const max = Math.max(AGENT_BOTTOM_MIN, Math.floor(workspaceH * AGENT_BOTTOM_MAX_RATIO))
+    return Math.min(max, Math.max(AGENT_BOTTOM_MIN, Math.round(h)))
+  }, [])
+
+  const clampAgentColW = useCallback((w: number) => {
+    const workspaceW = workspaceRef.current?.clientWidth || window.innerWidth
+    // Docked right, the Agent may widen to 50% of the app width. On a narrow
+    // window that cap can fall below the minimum, so never exceed the space the
+    // sidebar and a terminal column need.
+    const half = Math.floor(workspaceW * AGENT_COL_MAX_RATIO)
+    const max = Math.max(AGENT_COL_MIN, half)
+    return Math.min(max, Math.max(AGENT_COL_MIN, Math.round(w)))
   }, [])
 
   const persistAgentBottomH = useCallback((h: number) => {
@@ -169,19 +202,42 @@ export function App() {
     }
   }, [])
 
+  const persistAgentColW = useCallback((w: number) => {
+    try {
+      localStorage.setItem('hivenest_agent_col_w', String(w))
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
   useEffect(() => {
-    if (agentDock !== 'bottom' || rightCollapsed) return
+    if (rightCollapsed) return
     const onResize = () => {
-      setAgentBottomH((h) => {
-        const next = clampAgentBottomH(h)
-        if (next !== h) persistAgentBottomH(next)
-        return next
-      })
+      if (agentDock === 'bottom') {
+        setAgentBottomH((h) => {
+          const next = clampAgentBottomH(h)
+          if (next !== h) persistAgentBottomH(next)
+          return next
+        })
+      } else {
+        setAgentColW((w) => {
+          const next = clampAgentColW(w)
+          if (next !== w) persistAgentColW(next)
+          return next
+        })
+      }
     }
     onResize()
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [agentDock, rightCollapsed, clampAgentBottomH, persistAgentBottomH])
+  }, [
+    agentDock,
+    rightCollapsed,
+    clampAgentBottomH,
+    clampAgentColW,
+    persistAgentBottomH,
+    persistAgentColW,
+  ])
 
   const onAgentResizePointerDown = useCallback((e: ReactPointerEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -214,6 +270,39 @@ export function App() {
       persistAgentBottomH(agentBottomHRef.current)
     },
     [persistAgentBottomH],
+  )
+
+  /* Right-docked Agent: drag its left edge to widen. Moving the pointer left grows it. */
+  const onAgentColResizePointerDown = useCallback((e: ReactPointerEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    agentColDrag.current = { startX: e.clientX, startW: agentColWRef.current }
+    setAgentColResizing(true)
+  }, [])
+
+  const onAgentColResizePointerMove = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      const drag = agentColDrag.current
+      if (!drag) return
+      setAgentColW(clampAgentColW(drag.startW + (drag.startX - e.clientX)))
+    },
+    [clampAgentColW],
+  )
+
+  const onAgentColResizePointerUp = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!agentColDrag.current) return
+      agentColDrag.current = null
+      setAgentColResizing(false)
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+      persistAgentColW(agentColWRef.current)
+    },
+    [persistAgentColW],
   )
 
   /**
@@ -698,13 +787,19 @@ export function App() {
           rightCollapsed ? 'right-collapsed' : '',
           agentDock === 'bottom' ? 'agent-dock-bottom' : '',
           agentResizing ? 'is-agent-resizing' : '',
+          agentColResizing ? 'is-agent-col-resizing' : '',
         ]
           .filter(Boolean)
           .join(' ')}
         style={
-          agentDock === 'bottom' && !rightCollapsed
-            ? ({ ['--agent-bottom-h' as string]: `${agentBottomH}px` } as CSSProperties)
-            : undefined
+          {
+            // Always feed the width so the right dock can be dragged; height only
+            // matters when the Agent sits below the terminal.
+            ['--agent-col' as string]: `${agentColW}px`,
+            ...(agentDock === 'bottom' && !rightCollapsed
+              ? { ['--agent-bottom-h' as string]: `${agentBottomH}px` }
+              : {}),
+          } as CSSProperties
         }
       >
         <HostSidebar
@@ -760,13 +855,34 @@ export function App() {
               className={`agent-resize-handle${agentResizing ? ' is-dragging' : ''}`}
               aria-label="Resize agent panel"
               aria-orientation="horizontal"
-              aria-valuemin={160}
-              aria-valuemax={Math.max(160, Math.floor((workspaceRef.current?.clientHeight || 0) / 2) || 480)}
+              aria-valuemin={AGENT_BOTTOM_MIN}
+              aria-valuemax={Math.max(
+                AGENT_BOTTOM_MIN,
+                Math.floor((workspaceRef.current?.clientHeight || 0) * AGENT_BOTTOM_MAX_RATIO) || 480,
+              )}
               aria-valuenow={agentBottomH}
               onPointerDown={onAgentResizePointerDown}
               onPointerMove={onAgentResizePointerMove}
               onPointerUp={onAgentResizePointerUp}
               onPointerCancel={onAgentResizePointerUp}
+            />
+          ) : null}
+          {agentDock === 'right' && !rightCollapsed ? (
+            <button
+              type="button"
+              className={`agent-col-resize-handle${agentColResizing ? ' is-dragging' : ''}`}
+              aria-label="Resize agent panel width"
+              aria-orientation="vertical"
+              aria-valuemin={AGENT_COL_MIN}
+              aria-valuemax={Math.max(
+                AGENT_COL_MIN,
+                Math.floor((workspaceRef.current?.clientWidth || 0) * AGENT_COL_MAX_RATIO) || 720,
+              )}
+              aria-valuenow={agentColW}
+              onPointerDown={onAgentColResizePointerDown}
+              onPointerMove={onAgentColResizePointerMove}
+              onPointerUp={onAgentColResizePointerUp}
+              onPointerCancel={onAgentColResizePointerUp}
             />
           ) : null}
           {tabSessions.length === 0 ? (

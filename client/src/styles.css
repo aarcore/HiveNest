@@ -3124,3 +3124,143 @@ html[data-app-toasts='1'] .terminal-pane > .term-host {
   opacity: 0.4;
   cursor: default;
 }
+
+/* ---------- Rich text inside Agent / Fleet bubbles ---------- */
+
+.bubble.assistant .rich-p,
+.bubble.assistant .rich-h,
+.bubble.assistant .rich-list,
+.bubble.assistant .rich-code {
+  margin: 0;
+}
+.bubble.assistant .rich-p + .rich-p,
+.bubble.assistant .rich-p + .rich-list,
+.bubble.assistant .rich-list + .rich-p,
+.bubble.assistant .rich-h + .rich-p,
+.bubble.assistant .rich-p + .rich-h,
+.bubble.assistant .rich-p + .rich-code,
+.bubble.assistant .rich-code + .rich-p,
+.bubble.assistant .rich-list + .rich-list {
+  margin-top: 8px;
+}
+.bubble.assistant .rich-h1 {
+  font-size: 13px;
+  font-weight: 600;
+}
+.bubble.assistant .rich-h2 {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.bubble.assistant .rich-list {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bubble.assistant .rich-list li { margin: 0; }
+.bubble.assistant .rich-code {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--elevated-muted);
+  border: 1px solid var(--border);
+  overflow-x: auto;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre;
+}
+.bubble.assistant .rich-code code {
+  font: inherit;
+  background: none;
+  padding: 0;
+}
+.bubble.assistant code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--elevated-muted);
+  border: 1px solid var(--border);
+  font: 11.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.bubble.assistant .rich-code code {
+  border: none;
+  background: none;
+  padding: 0;
+}
+.bubble.assistant strong { font-weight: 600; }
+
+.bubble.assistant .rich-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+}
+.bubble.assistant .rich-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+}
+.bubble.assistant .rich-table th,
+.bubble.assistant .rich-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.bubble.assistant .rich-table th {
+  font-weight: 600;
+  background: var(--elevated-muted);
+  color: var(--muted);
+}
+.bubble.assistant .rich-table tr:last-child td { border-bottom: none; }
+
+/* ---------- Right-docked Agent width grip ---------- */
+
+.agent-col-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  z-index: 6;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.agent-col-resize-handle::after {
+  content: '';
+  width: 3px;
+  height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--chrome-line) 85%, transparent);
+  transition: background .12s ease;
+  pointer-events: none;
+}
+.agent-col-resize-handle:hover::after,
+.agent-col-resize-handle:focus-visible::after,
+.agent-col-resize-handle.is-dragging::after {
+  background: color-mix(in srgb, var(--text) 32%, transparent);
+}
+.agent-col-resize-handle:focus-visible {
+  outline: none;
+}
+/* Only meaningful while docked right and expanded. */
+.workspace.agent-dock-bottom .agent-col-resize-handle,
+.workspace.right-collapsed .agent-col-resize-handle {
+  display: none;
+}
+.workspace.is-agent-col-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+.workspace.is-agent-col-resizing iframe,
+.workspace.is-agent-col-resizing .term-host {
+  pointer-events: none;
+}
+
+/* Dragging must feel direct: suppress the grid transition while resizing. */
+.workspace.is-agent-resizing,
+.workspace.is-agent-col-resizing {
+  transition: none;
+}

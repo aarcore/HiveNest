@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useI18n } from '../i18n'
+import { renderRichText } from '../agent/richText'
 
 export type FleetLine =
   | { kind: 'assistant'; text: string }
@@ -63,7 +64,7 @@ export function FleetChatLog({ lines }: { lines: FleetLine[] }) {
           case 'assistant':
             return (
               <div key={i} className="bubble assistant">
-                {line.text}
+                {renderRichText(line.text)}
               </div>
             )
           case 'step':

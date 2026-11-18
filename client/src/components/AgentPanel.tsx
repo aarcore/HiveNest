@@ -36,6 +36,7 @@ import {
   type McpConnectionState,
   type PendingMcpCall,
 } from '../agent/mcp'
+import { renderRichText, stripActionJson } from '../agent/richText'
 import { PROVIDER_META } from '../settings/types'
 import {
   IconButton,
@@ -698,7 +699,17 @@ export function AgentPanel({ session, collapsed, dock = 'right', onToggleDock }:
         ) : null}
         {displayLines.map((line, i) => {
           if (line.kind === 'user') return <div key={i} className="bubble user">{line.text}</div>
-          if (line.kind === 'assistant') return <div key={i} className="bubble assistant">{line.text}</div>
+          if (line.kind === 'assistant') {
+            // Models answer in light Markdown and sometimes leave the control
+            // JSON in the text; strip the JSON and render the formatting.
+            const body = stripActionJson(line.text)
+            if (!body) return null
+            return (
+              <div key={i} className="bubble assistant">
+                {renderRichText(body)}
+              </div>
+            )
+          }
           if (line.kind === 'note') return <div key={i} className="bubble note">{line.text}</div>
           if (line.kind === 'error') return <div key={i} className="bubble error">{line.text}</div>
           if (line.kind === 'result') {
