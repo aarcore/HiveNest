@@ -13,6 +13,7 @@ export function HostKeyModal({ open, info, busy, onReject, onAccept }: Props) {
   const { t } = useI18n()
   if (!open || !info) return null
   const mismatch = info.code === 'host_key_mismatch'
+  const isBastion = info.origin === 'bastion'
   return (
     <div className="modal-backdrop" onClick={onReject}>
       <div className="modal host-key-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
@@ -20,6 +21,15 @@ export function HostKeyModal({ open, info, busy, onReject, onAccept }: Props) {
           <h2>{mismatch ? t('hostKeyMismatchTitle') : t('hostKeyUnknownTitle')}</h2>
         </div>
         <div className="modal-body">
+          {isBastion ? (
+            <p className="bastion-key-note small">
+              {t('hostKeyFromBastion')}{' '}
+              <span className="mono">
+                #{typeof info.hop_index === 'number' ? info.hop_index + 1 : 1}
+                {info.hop_label ? ` ${info.hop_label}` : ''}
+              </span>
+            </p>
+          ) : null}
           <p className={mismatch ? 'error-text' : 'hint'}>
             {mismatch ? t('hostKeyMismatchBody') : t('hostKeyUnknownBody')}
           </p>

@@ -180,6 +180,8 @@ func (m *Manager) openDial(hostID string, h *store.HostProfile, opts OpenOptions
 				AcceptHostKey:  opts.AcceptHostKey,
 				ReplaceHostKey: opts.ReplaceHostKey,
 				JumpClient:     prev,
+				HopRole:        "bastion",
+				HopIndex:       i,
 			})
 			if err != nil {
 				closeJumpChain(jumpChain)
@@ -187,6 +189,12 @@ func (m *Manager) openDial(hostID string, h *store.HostProfile, opts OpenOptions
 					Action: "session.open", HostID: hostID, Actor: "user", OK: false,
 					Detail: fmt.Sprintf("jump[%d]: ", i) + sanitizeDialErr(err.Error(), opts.Password, jPass, opts.JumpPassword),
 				})
+				// Surface a bastion host-key decision unchanged so the prompt can
+				// name that hop instead of the target.
+				var hk *sshx.HostKeyIssue
+				if errors.As(err, &hk) {
+					return nil, err
+				}
 				return nil, fmt.Errorf("jump dial[%d] failed: %w", i, err)
 			}
 			jumpChain = append(jumpChain, jr.Client)

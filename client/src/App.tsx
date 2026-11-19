@@ -449,7 +449,11 @@ export function App() {
   async function connectWithPassword(
     hostId: string,
     creds: ConnectCredentials = {},
-    hostKeyOpts?: { accept_host_key?: boolean; replace_host_key?: boolean },
+    hostKeyOpts?: {
+      accept_host_key?: boolean
+      replace_host_key?: boolean
+      trust_host_key?: { host: string; port: number; public_key: string }
+    },
   ) {
     setActiveHostId(hostId)
     setConnectingHostId(hostId)
@@ -471,6 +475,7 @@ export function App() {
         jump_passwords: creds.jumpPasswords,
         accept_host_key: hostKeyOpts?.accept_host_key,
         replace_host_key: hostKeyOpts?.replace_host_key,
+        trust_host_key: hostKeyOpts?.trust_host_key,
       })
       addOrReplaceSession(s)
       linkCheckSkipUntilRef.current = Date.now() + 3000
@@ -941,8 +946,15 @@ export function App() {
               jumpPassword: pendingConnect.jumpPassword,
               jumpPasswords: pendingConnect.jumpPasswords,
             },
+            // Trust exactly the fingerprint the user just reviewed. Using the
+            // blanket accept flag here would also trust the target (or another
+            // hop) without ever showing its key.
             {
-              accept_host_key: !replace,
+              trust_host_key: {
+                host: hostKey.host,
+                port: hostKey.port,
+                public_key: hostKey.public_key,
+              },
               replace_host_key: replace,
             },
           )

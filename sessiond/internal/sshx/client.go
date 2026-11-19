@@ -2,6 +2,7 @@
 package sshx
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -38,6 +39,10 @@ type DialOpts struct {
 	JumpPassword     string      // bastion password for hop 0 when JumpHopAuths empty
 	JumpHopAuths     []HopAuth   // optional per-hop auth aligned with ParseJumpChain
 	JumpClient       *ssh.Client // if set, dial target through this already-open bastion
+	// HopRole labels this dial for host-key prompts: "" / "target" or "bastion".
+	// The manager sets it per hop so a bastion key change is not mistaken for the target's.
+	HopRole  string
+	HopIndex int
 }
 
 // HopAuth is per-hop bastion authentication for ProxyJump chains.
@@ -160,10 +165,18 @@ func Dial(opts DialOpts) (*DialResult, error) {
 				AcceptHostKey:  opts.AcceptHostKey,
 				ReplaceHostKey: opts.ReplaceHostKey,
 				JumpClient:     prev,
+				HopRole:        "bastion",
+				HopIndex:       i,
 			}
 			jumpRes, err := Dial(jumpOpts)
 			if err != nil {
 				closeHops()
+				// Host-key decision for a bastion must reach the UI before any auth
+				// retry, or the prompt would name the wrong machine.
+				var hk *HostKeyIssue
+				if errors.As(err, &hk) {
+					return nil, err
+				}
 				if jumpPass == "" && isSSHAuthError(err) {
 					return nil, &JumpPasswordRequiredError{
 						Jump:     spec,
@@ -208,7 +221,25 @@ func hostKeyCallback(opts DialOpts) ssh.HostKeyCallback {
 	if opts.KnownHosts == nil {
 		return ssh.InsecureIgnoreHostKey()
 	}
-	return opts.KnownHosts.Callback(opts.Host, opts.Port, opts.AcceptHostKey, opts.ReplaceHostKey)
+	inner := opts.KnownHosts.Callback(opts.Host, opts.Port, opts.AcceptHostKey, opts.ReplaceHostKey)
+	// Tag issues with the hop they belong to. Without this a bastion fingerprint
+	// change surfaces as if it were the target's, which is the wrong machine to
+	// judge.
+	role := opts.HopRole
+	if role == "" {
+		role = "target"
+	}
+	label := fmt.Sprintf("%s@%s:%d", opts.User, opts.Host, opts.Port)
+	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		err := inner(hostname, remote, key)
+		var hk *HostKeyIssue
+		if errors.As(err, &hk) && role != "target" {
+			hk.Origin = role
+			hk.HopIndex = opts.HopIndex
+			hk.HopLabel = label
+		}
+		return err
+	}
 }
 
 

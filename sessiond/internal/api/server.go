@@ -170,10 +170,23 @@ func (s *Server) handleOpenSession(w http.ResponseWriter, r *http.Request) {
 		JumpPasswords  map[string]string `json:"jump_passwords"` // per-hop host id or proxy:N; never persisted
 		AcceptHostKey  bool              `json:"accept_host_key"`
 		ReplaceHostKey bool              `json:"replace_host_key"`
+		TrustHostKey   *struct {
+			Host      string `json:"host"`
+			Port      int    `json:"port"`
+			PublicKey string `json:"public_key"`
+		} `json:"trust_host_key"`
 	}
 	if err := readJSON(r, &body); err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
+	}
+	// Pin trusting a single fingerprint (the hop that prompted) before connecting,
+	// so accepting a bastion key cannot silently whitelist the target as well.
+	if t := body.TrustHostKey; t != nil && t.Host != "" && t.PublicKey != "" {
+		if _, err := s.knownHosts.Accept(t.Host, t.Port, t.PublicKey); err != nil {
+			writeErr(w, http.StatusBadRequest, err)
+			return
+		}
 	}
 	sess, err := s.sessions.Open(body.HostID, session.OpenOptions{
 		Password:       body.Password,

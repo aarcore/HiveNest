@@ -57,6 +57,12 @@ export type HostKeyInfo = {
   fingerprint_sha256: string
   public_key: string
   previous_fingerprint?: string
+  /** "bastion" when the key belongs to a jump hop rather than the target. */
+  origin?: 'target' | 'bastion'
+  /** 0-based bastion position, present when origin is "bastion". */
+  hop_index?: number
+  /** Hop identity such as "jump@10.0.0.5:22". */
+  hop_label?: string
 }
 
 export type SessionInfo = {
@@ -172,6 +178,11 @@ export type OpenSessionOpts = {
   jump_passwords?: Record<string, string>
   accept_host_key?: boolean
   replace_host_key?: boolean
+  /**
+   * Trust only this one host:port fingerprint. Preferred over accept_host_key
+   * when a bastion prompted: it must not blanket-trust the target as well.
+   */
+  trust_host_key?: { host: string; port: number; public_key: string }
 }
 
 /** Passwords are connect-time only and are never persisted by sessiond. Do not log them. */
@@ -194,6 +205,7 @@ export const openSession = (host_id: string, opts: OpenSessionOpts = {}) => {
   }
   if (opts.accept_host_key) body.accept_host_key = true
   if (opts.replace_host_key) body.replace_host_key = true
+  if (opts.trust_host_key) body.trust_host_key = opts.trust_host_key
   return api<SessionInfo>('/v1/sessions', { method: 'POST', body: JSON.stringify(body) })
 }
 

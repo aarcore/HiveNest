@@ -138,15 +138,16 @@ export function AgentPanel({ session, collapsed, dock = 'right', onToggleDock }:
   }
 
   function headerLines(): ChatLine[] {
-    return [
-      { kind: 'note', text: providerHeaderNote() },
-      { kind: 'note', text: sessionHeaderNote() },
-    ]
+    // Only the provider line: the pane header already shows the bound host, so
+    // repeating it in the transcript is noise.
+    return [{ kind: 'note', text: providerHeaderNote() }]
   }
 
   function linesForStorage(all: ChatLine[]): ChatLine[] {
     let start = 0
-    if (all[0]?.kind === 'note' && all[1]?.kind === 'note') start = 2
+    // Skip the provider note (and, from older saves, the session note after it).
+    if (all[0]?.kind === 'note') start = 1
+    while (all[start]?.kind === 'note' && all[start + 1]?.kind === 'note') start += 1
     if (
       all[start]?.kind === 'note' &&
       (all[start] as { kind: 'note'; text: string }).text === t('agentHistoryRestored')
@@ -161,7 +162,6 @@ export function AgentPanel({ session, collapsed, dock = 'right', onToggleDock }:
   useEffect(() => {
     const hostKey = currentHostKey
     const label = providerHeaderNote()
-    const sessionNote = sessionHeaderNote()
 
     if (hostKeyRef.current !== hostKey) {
       hostKeyRef.current = hostKey
@@ -203,7 +203,6 @@ export function AgentPanel({ session, collapsed, dock = 'right', onToggleDock }:
         }
         setLines([
           { kind: 'note', text: label },
-          { kind: 'note', text: sessionNote },
           { kind: 'note', text: t('agentHistoryRestored') },
           ...snap.lines,
         ])
@@ -225,10 +224,12 @@ export function AgentPanel({ session, collapsed, dock = 'right', onToggleDock }:
 
     setLines((prev) => {
       if (!prev.length) return headerLines()
-      const rest = prev.slice(2)
-      return [{ kind: 'note', text: label }, { kind: 'note', text: sessionNote }, ...rest]
+      // The first line is always the provider note; replace it in place so the
+      // rest of the transcript (including any restoration banner) stays intact.
+      if (prev[0]?.kind !== 'note') return [{ kind: 'note', text: label }, ...prev]
+      return [{ kind: 'note', text: label }, ...prev.slice(1)]
     })
-  }, [currentHostKey, session?.remote, activeProvider, locale, t])
+  }, [currentHostKey, activeProvider, locale, t])
 
   useEffect(() => {
     if (!currentHostKey || historyPreviewKey || busy) return

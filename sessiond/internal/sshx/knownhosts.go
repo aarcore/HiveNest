@@ -21,6 +21,13 @@ type HostKeyIssue struct {
 	FingerprintSHA256 string `json:"fingerprint_sha256"`
 	PublicKey       string `json:"public_key"` // OpenSSH authorized_keys line body (type + b64)
 	PreviousFingerprint string `json:"previous_fingerprint,omitempty"`
+	// Origin names the hop this key belongs to, so the prompt does not read as if
+	// it were about the target host. Empty means the target itself.
+	Origin string `json:"origin,omitempty"` // target | bastion
+	// HopIndex is the 0-based bastion position when Origin is "bastion".
+	HopIndex int `json:"hop_index,omitempty"`
+	// HopLabel is the user-facing hop identity, e.g. "jump@10.0.0.5:22".
+	HopLabel string `json:"hop_label,omitempty"`
 }
 
 func (e *HostKeyIssue) Error() string {

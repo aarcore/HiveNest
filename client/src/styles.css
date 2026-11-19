@@ -3264,3 +3264,16 @@ html[data-app-toasts='1'] .terminal-pane > .term-host {
 .workspace.is-agent-col-resizing {
   transition: none;
 }
+
+/* Bastion host-key prompt: name the hop so the fingerprint is judged in context. */
+.bastion-key-note {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--elevated-muted);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.bastion-key-note .mono {
+  color: var(--text);
+}
