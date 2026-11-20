@@ -64,6 +64,29 @@ func (m *Manager) OpenLocal() (*Session, error) {
 	return s, nil
 }
 
+// localShellEnv is os.Environ plus the terminal variables a GUI-launched app
+// does not inherit. Without TERM set, readline/zsh cannot erase characters and
+// Backspace paints a space instead of deleting.
+//
+// These are set unconditionally rather than only when missing: a GUI launch can
+// inherit a placeholder like TERM=dumb from launchd, which produces the same
+// broken line editing. The values here describe the PTY we just created.
+func localShellEnv() []string {
+	env := os.Environ()
+	set := func(key, val string) {
+		for i, kv := range env {
+			if strings.HasPrefix(kv, key+"=") {
+				env[i] = key + "=" + val
+				return
+			}
+		}
+		env = append(env, key+"="+val)
+	}
+	set("TERM", "xterm-256color")
+	set("COLORTERM", "truecolor")
+	return env
+}
+
 func defaultShell() (string, []string) {
 	shell := os.Getenv("SHELL")
 	if shell == "" {
@@ -119,7 +142,7 @@ func (m *Manager) AttachLocalPTY(sessionID string, ws *websocket.Conn, cols, row
 
 	shell, args := defaultShell()
 	cmd := exec.Command(shell, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = localShellEnv()
 	if s.localHome != "" {
 		cmd.Dir = s.localHome
 	}
