@@ -1,6 +1,6 @@
 [package]
 name = "hivenest"
-version = "0.1.4"
+version = "0.1.5"
 description = "Hive Nest — SSH sessions + Agent assist"
 authors = ["Hive Nest"]
 edition = "2021"
