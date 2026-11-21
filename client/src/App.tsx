@@ -33,6 +33,7 @@ import {
 import { HostKeyModal } from './components/HostKeyModal'
 import { HostSidebar } from './components/HostSidebar'
 import { FleetPanel } from './components/FleetPanel'
+import { ConfirmModal } from './components/ConfirmModal'
 import { SettingsModal } from './components/SettingsModal'
 import { HelpModal } from './components/HelpModal'
 import { SessionTabs } from './components/SessionTabs'
@@ -66,6 +67,8 @@ export function App() {
   const [modal, setModal] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Host | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [editingHost, setEditingHost] = useState<Host | null>(null)
   const [pwHost, setPwHost] = useState<Host | null>(null)
@@ -704,13 +707,27 @@ export function App() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm('Delete this host profile?')) return
-    const live = sessions.find((s) => s.host_id === id && !s.is_local)
-    if (live) await closeSessionById(live.id)
-    await forgetHostSecrets(id)
-    await deleteHost(id)
-    await refreshHosts()
-    if (activeHostId === id) setActiveHostId(null)
+    const h = hosts.find((x) => x.id === id)
+    setDeleteTarget(h ?? null)
+  }
+
+  async function performDelete() {
+    const target = deleteTarget
+    if (!target) return
+    setDeleting(true)
+    try {
+      const live = sessions.find((s) => s.host_id === target.id && !s.is_local)
+      if (live) await closeSessionById(live.id)
+      await forgetHostSecrets(target.id)
+      await deleteHost(target.id)
+      await refreshHosts()
+      if (activeHostId === target.id) setActiveHostId(null)
+      setDeleteTarget(null)
+    } catch (ex: unknown) {
+      toast.error(ex instanceof Error ? ex.message : String(ex))
+    } finally {
+      setDeleting(false)
+    }
   }
 
   function onEdit(id: string) {
@@ -990,6 +1007,21 @@ export function App() {
         open={fleetOpen}
         onClose={() => setFleetOpen(false)}
         onRosterChange={() => void refreshHosts()}
+      />
+      <ConfirmModal
+        open={!!deleteTarget}
+        title={t('deleteHostTitle')}
+        message={
+          deleteTarget
+            ? `${t('deleteHostBody')}\n${deleteTarget.name} — ${deleteTarget.user}@${deleteTarget.host}:${deleteTarget.port}`
+            : ''
+        }
+        confirmLabel={t('delete')}
+        busy={deleting}
+        onConfirm={() => void performDelete()}
+        onCancel={() => {
+          if (!deleting) setDeleteTarget(null)
+        }}
       />
     </div>
   )

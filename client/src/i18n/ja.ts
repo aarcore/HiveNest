@@ -251,4 +251,6 @@ export const ja: Record<MessageKey, string> = {
   hidePassword: 'パスワードを隠す',
   hostKeyFromBastion: 'この指紋は接続先へ向かう踏み台ホストのものです。',
   offline: 'オフライン',
+  deleteHostTitle: 'このホストを削除しますか？',
+  deleteHostBody: 'ホスト設定と保存済みパスワードが削除されます。元に戻せません。',
 }

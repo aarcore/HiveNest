@@ -251,4 +251,6 @@ export const zhCN: Record<MessageKey, string> = {
   hidePassword: '隐藏密码',
   hostKeyFromBastion: '这个指纹属于通往目标主机的跳板机。',
   offline: '离线',
+  deleteHostTitle: '删除这台主机？',
+  deleteHostBody: '主机配置和已保存的密码会被移除，无法撤销。',
 }

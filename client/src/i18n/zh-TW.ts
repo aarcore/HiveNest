@@ -251,4 +251,6 @@ export const zhTW: Record<MessageKey, string> = {
   hidePassword: '隱藏密碼',
   hostKeyFromBastion: '這個指紋屬於通往目標主機的跳板機。',
   offline: '離線',
+  deleteHostTitle: '刪除這台主機？',
+  deleteHostBody: '主機設定與已儲存的密碼會被移除，無法復原。',
 }

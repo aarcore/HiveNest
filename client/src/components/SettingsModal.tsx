@@ -54,6 +54,7 @@ import {
   IconX,
 } from './icons'
 import { PasswordInput } from './PasswordInput'
+import { ConfirmModal } from './ConfirmModal'
 
 type Props = {
   open: boolean
@@ -97,6 +98,8 @@ export function SettingsModal({ open, onClose }: Props) {
   const [knownHosts, setKnownHosts] = useState<KnownHostEntry[]>([])
   const [khBusy, setKhBusy] = useState(false)
   const [khError, setKhError] = useState('')
+  /** Known-host entry awaiting confirmation before removal. */
+  const [khPendingDelete, setKhPendingDelete] = useState<{ host: string; port: number } | null>(null)
   const [skillsDraft, setSkillsDraft] = useState<SkillsSettings>(() => loadSkillsSettings())
   const [skillImportError, setSkillImportError] = useState('')
   const [skillImportInfo, setSkillImportInfo] = useState('')
@@ -933,18 +936,7 @@ export function SettingsModal({ open, onClose }: Props) {
                       variant="danger"
                       label={t('delete')}
                       disabled={khBusy}
-                      onClick={async () => {
-                        if (!confirm(t('knownHostsDeleteConfirm'))) return
-                        setKhBusy(true)
-                        try {
-                          await deleteKnownHost(e.host, e.port)
-                          await refreshKnownHosts()
-                        } catch (ex: any) {
-                          setKhError(ex.message || String(ex))
-                        } finally {
-                          setKhBusy(false)
-                        }
-                      }}
+                      onClick={() => setKhPendingDelete({ host: e.host, port: e.port })}
                       icon={<IconTrash size={14} />}
                     />
                   </li>
@@ -964,6 +956,36 @@ export function SettingsModal({ open, onClose }: Props) {
           </button>
         </div>
       </form>
+      <ConfirmModal
+        open={!!khPendingDelete}
+        title={t('knownHostsDeleteConfirm')}
+        message={
+          khPendingDelete
+            ? `${khPendingDelete.host}:${khPendingDelete.port}\n${t('knownHostsHint')}`
+            : ''
+        }
+        confirmLabel={t('delete')}
+        busy={khBusy}
+        onConfirm={() => {
+          const target = khPendingDelete
+          if (!target) return
+          void (async () => {
+            setKhBusy(true)
+            try {
+              await deleteKnownHost(target.host, target.port)
+              await refreshKnownHosts()
+              setKhPendingDelete(null)
+            } catch (ex: unknown) {
+              setKhError(ex instanceof Error ? ex.message : String(ex))
+            } finally {
+              setKhBusy(false)
+            }
+          })()
+        }}
+        onCancel={() => {
+          if (!khBusy) setKhPendingDelete(null)
+        }}
+      />
     </div>
   )
 }

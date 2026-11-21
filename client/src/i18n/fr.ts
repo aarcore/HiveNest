@@ -251,4 +251,6 @@ export const fr: Record<MessageKey, string> = {
   hidePassword: 'Masquer le mot de passe',
   hostKeyFromBastion: 'Cette empreinte appartient à un bastion sur le chemin de la cible.',
   offline: 'hors ligne',
+  deleteHostTitle: 'Supprimer cet hôte ?',
+  deleteHostBody: 'Le profil et le mot de passe enregistré seront supprimés. Action irréversible.',
 }

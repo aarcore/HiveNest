@@ -3277,3 +3277,11 @@ html[data-app-toasts='1'] .terminal-pane > .term-host {
 .bastion-key-note .mono {
   color: var(--text);
 }
+
+/* Confirmation dialog: message lines are separated deliberately (title, body). */
+.confirm-modal .modal-body p {
+  white-space: pre-line;
+  margin: 0;
+  line-height: 1.5;
+}
+.confirm-modal { width: min(420px, 92vw); }

@@ -262,6 +262,8 @@ export const en = {
   hidePassword: 'Hide password',
   hostKeyFromBastion: 'This fingerprint belongs to a bastion on the way to the target.',
   offline: 'offline',
+  deleteHostTitle: 'Delete host?',
+  deleteHostBody: 'The host profile and its saved password are removed. This cannot be undone.',
 } as const
 
 export type MessageKey = keyof typeof en

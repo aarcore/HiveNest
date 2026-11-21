@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-C9A227?style=flat-square&labelColor=333333"></a>
-  <img alt="version 0.1.5" src="https://img.shields.io/badge/version-0.1.5-E07A3D?style=flat-square&labelColor=333333">
+  <img alt="version 0.1.6" src="https://img.shields.io/badge/version-0.1.6-E07A3D?style=flat-square&labelColor=333333">
   <img alt="macOS" src="https://img.shields.io/badge/platform-macOS-1F8A8A?style=flat-square&labelColor=333333">
   <img alt="Linux" src="https://img.shields.io/badge/platform-Linux-2F6FDB?style=flat-square&labelColor=333333">
   <img alt="Windows" src="https://img.shields.io/badge/platform-Windows-C4473A?style=flat-square&labelColor=333333">

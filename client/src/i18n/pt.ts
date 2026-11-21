@@ -251,4 +251,6 @@ export const pt: Record<MessageKey, string> = {
   hidePassword: 'Ocultar palavra-passe',
   hostKeyFromBastion: 'Esta impressão pertence a um bastion no caminho até o destino.',
   offline: 'offline',
+  deleteHostTitle: 'Eliminar este host?',
+  deleteHostBody: 'O perfil e a palavra-passe guardada são removidos. Não pode ser anulado.',
 }

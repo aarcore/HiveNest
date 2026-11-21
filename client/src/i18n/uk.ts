@@ -251,4 +251,6 @@ export const uk: Record<MessageKey, string> = {
   hidePassword: 'Приховати пароль',
   hostKeyFromBastion: 'Цей відбиток належить проміжному хосту на шляху до цілі.',
   offline: 'офлайн',
+  deleteHostTitle: 'Видалити цей хост?',
+  deleteHostBody: 'Профіль і збережений пароль буде видалено. Скасувати неможливо.',
 }

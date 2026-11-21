@@ -251,4 +251,6 @@ export const ko: Record<MessageKey, string> = {
   hidePassword: '비밀번호 숨기기',
   hostKeyFromBastion: '이 지문은 대상 호스트로 가는 배스천의 것입니다.',
   offline: '오프라인',
+  deleteHostTitle: '이 호스트를 삭제할까요?',
+  deleteHostBody: '호스트 설정과 저장된 비밀번호가 삭제됩니다. 되돌릴 수 없습니다.',
 }
